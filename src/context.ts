@@ -1,6 +1,7 @@
 import {createContext, useContext} from "react";
 import {PersonKey, Position, PositionKey} from "./types.ts";
 import {create} from "zustand";
+import {persist} from "zustand/middleware";
 
 export const PositionsContext = createContext([{
     max: 1,
@@ -45,17 +46,19 @@ interface VotesState {
     setVoteIndex: (index: number) => void
     saveVote: (ballot: Ballot) => void
     setBallotVote: (index: number, position: PositionKey, person: PersonKey, checked: boolean) => void
+    // countVoted: (position: PositionKey, person: PersonKey)=> number
 }
 
 export function createNewBallot(index: number) {
     console.log('create new ballot', index)
     return {
         index: index,
-        vote: new Map<PositionKey, Map<PersonKey, boolean>>()
+        vote: []
     } as Ballot;
 }
 
-export const useVoteStore = create<VotesState>((set) => {
+export const useVoteStore = create<VotesState>()(persist(
+    (set) => {
         const DEFAULT = {
             votes: [createNewBallot(0)],
             currentVoteIndex: 0
@@ -72,11 +75,15 @@ export const useVoteStore = create<VotesState>((set) => {
             }),
             setBallotVote: (index, position, person, checked) => set((state) => {
                 console.log("setBallotVote", index, position, person, checked)
-                const ballotWithIndex = state.votes.find(b => b.index == index) ?? createNewBallot(index);
-                const positionVote = ballotWithIndex.vote.get(position) ?? new Map<PersonKey, boolean>();
-                ballotWithIndex.vote.set(position, positionVote.set(person, checked))
-
-                const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([ballotWithIndex])
+                const updatedBallot = state.votes.find(b => b.index == index) ?? createNewBallot(index);
+                // replace one vote within the ballot
+                updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position || v.person != person).concat({
+                    position,
+                    person,
+                    checked
+                } as Vote)
+                // replace one ballot in the list of ballots
+                const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([updatedBallot])
                 return ({
                     votes: updatedState
                 });
@@ -95,10 +102,19 @@ export const useVoteStore = create<VotesState>((set) => {
             }),
             previousVote: () => set((state) => ({currentVoteIndex: state.currentVoteIndex - 1}))
         });
+    },
+    {
+        name: "vote-store", // by default localStorage is used.
     }
-)
+))
 
 export interface Ballot {
     index: number
-    vote: Map<PositionKey, Map<PersonKey, boolean>>
+    vote: Array<Vote>
+}
+
+export interface Vote {
+    position: PositionKey
+    person: PersonKey
+    checked: boolean
 }

@@ -1,9 +1,9 @@
 import {Ballot, createNewBallot, usePositions, useVoteStore} from "../context.ts";
 import {Button, Checkbox, FormControl, FormControlLabel, Pagination} from "@mui/material";
-import {Person, Position} from "../types.ts";
+import {Person, PersonKey, Position, PositionKey} from "../types.ts";
 import {ChangeEvent, useState} from "react";
 
-export function Votes(position: Position, person: Person) {
+export function Votes() {
     const {votes, currentVoteIndex, nextVote, setVoteIndex, setBallotVote} = useVoteStore()
     const currentVote = useVoteStore(state => state.votes.find(b => b.index == state.currentVoteIndex)!)
     const positions = usePositions()
@@ -17,15 +17,12 @@ export function Votes(position: Position, person: Person) {
         setVoteIndex(pageNumber - 1)
     }
 
+    function isChecked(positionKey: PositionKey, personKey: PersonKey): boolean {
+        return currentVote?.vote.find(v => v.position == positionKey && v.person == personKey)?.checked ?? false
+    }
+
     return <>
         Vote: {currentVoteIndex}
-
-        <Pagination
-            count={Math.max(votes.length, 1)}
-            color="primary"
-            page={currentVoteIndex + 1}
-            onChange={handleVoteChange}/>
-
         <FormControl>
             <ul>
                 {positions.map((position, positionIndex) => <li key={position.key}>
@@ -37,7 +34,7 @@ export function Votes(position: Position, person: Person) {
                                     control={
                                         <Checkbox
                                             onChange={(_event, checked) => togglePerson(position, person, checked)}
-                                            checked={!!currentVote.vote.get(position.key)?.get(person.key)}
+                                            checked={isChecked(position.key, person.key)}
                                         />
                                     }
                                     label={person.name}/>
@@ -46,22 +43,19 @@ export function Votes(position: Position, person: Person) {
                     </ul>
                 </li>)}
             </ul>
-            <Button onClick={nextVote} variant="outlined">Next Vote</Button>
+            <Button onClick={nextVote} variant="contained" color="primary">Next Vote</Button>
         </FormControl>
 
+        <Pagination
+            count={Math.max(votes.length, 1)}
+            color="primary"
+            page={currentVoteIndex + 1}
+            onChange={handleVoteChange}/>
+
         <ul>
-            {[...currentVote.vote.keys()].map((positionKey) => (
-                <li key={positionKey}>
-                    vote : {positionKey}
-                    <ul>
-                        {[...currentVote.vote.get(positionKey)!.keys()].map((personKey) => (
-                            <li key={personKey}>
-                                {personKey} - checked: {
-                                currentVote.vote.get(positionKey)?.get(personKey) ? "yes" : "no"
-                            }
-                            </li>
-                        ))}
-                    </ul>
+            {currentVote.vote.map((vote, index) => (
+                <li key={"vote-" + index}>
+                    vote : {vote.position} / {vote.person} = {vote.checked ? "yes" : "no"}
                 </li>
             ))}
         </ul>
