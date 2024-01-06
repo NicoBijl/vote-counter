@@ -5,7 +5,7 @@ import {ChangeEvent, useState} from "react";
 
 export function Votes(position: Position, person: Person) {
     const {votes, currentVoteIndex, nextVote, setVoteIndex, setBallotVote} = useVoteStore()
-    const currentVote = useVoteStore(state => state.votes.find(b => b.index == state.currentVoteIndex) ?? createNewBallot(state.currentVoteIndex))
+    const currentVote = useVoteStore(state => state.votes.find(b => b.index == state.currentVoteIndex)!)
     const positions = usePositions()
 
     function togglePerson(position: Position, person: Person, checked: boolean) {
@@ -19,22 +19,6 @@ export function Votes(position: Position, person: Person) {
 
     return <>
         Vote: {currentVoteIndex}
-        <ul>
-            {[...currentVote.vote.keys()].map((positionKey) => (
-                <li key={positionKey}>
-                    vote : {positionKey}
-                    <ul>
-                        {[...currentVote.vote.get(positionKey)!.keys()].map((personKey) => (
-                            <li key={personKey}>
-                                {personKey} - checked: {
-                                currentVote.vote.get(positionKey)?.get(personKey) ? "yes" : "no"
-                            }
-                            </li>
-                        ))}
-                    </ul>
-                </li>
-            ))}
-        </ul>
 
         <Pagination
             count={Math.max(votes.length, 1)}
@@ -64,5 +48,22 @@ export function Votes(position: Position, person: Person) {
             </ul>
             <Button onClick={nextVote} variant="outlined">Next Vote</Button>
         </FormControl>
+
+        <ul>
+            {[...currentVote.vote.keys()].map((positionKey) => (
+                <li key={positionKey}>
+                    vote : {positionKey}
+                    <ul>
+                        {[...currentVote.vote.get(positionKey)!.keys()].map((personKey) => (
+                            <li key={personKey}>
+                                {personKey} - checked: {
+                                currentVote.vote.get(positionKey)?.get(personKey) ? "yes" : "no"
+                            }
+                            </li>
+                        ))}
+                    </ul>
+                </li>
+            ))}
+        </ul>
     </>;
 }

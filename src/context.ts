@@ -72,14 +72,11 @@ export const useVoteStore = create<VotesState>((set) => {
             }),
             setBallotVote: (index, position, person, checked) => set((state) => {
                 console.log("setBallotVote", index, position, person, checked)
-                console.log("update ", index, position, person, checked)
                 const ballotWithIndex = state.votes.find(b => b.index == index) ?? createNewBallot(index);
                 const positionVote = ballotWithIndex.vote.get(position) ?? new Map<PersonKey, boolean>();
                 ballotWithIndex.vote.set(position, positionVote.set(person, checked))
 
-                console.log("updated", ballotWithIndex)
                 const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([ballotWithIndex])
-                console.log("new state", updatedState)
                 return ({
                     votes: updatedState
                 });
@@ -88,6 +85,7 @@ export const useVoteStore = create<VotesState>((set) => {
                 const nextVoteIndex = state.currentVoteIndex + 1;
                 let updatedVotes;
                 if (!state.votes.find(b => b.index == nextVoteIndex)) {
+                    // create empty ballot if not existing
                     updatedVotes = state.votes.concat([createNewBallot(nextVoteIndex)])
                 } else {
                     updatedVotes = state.votes
