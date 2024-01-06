@@ -47,34 +47,57 @@ interface VotesState {
     setBallotVote: (index: number, position: PositionKey, person: PersonKey, checked: boolean) => void
 }
 
-export const useVoteStore = create<VotesState>((set) =>
-    ({
-        votes: new Array<Ballot>(),
-        currentVoteIndex: 0,
-        addVotes: (newVote) => set((state) => ({votes: state.votes.concat([newVote])})),
-        setVoteIndex: (newVoteIndex) => set(() => ({currentVoteIndex: newVoteIndex})),
-        saveVote: (ballotToAdd) => set((state) => {
-            return ({votes: state.votes.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
-        }),
-        setBallotVote: (index, position, person, checked) => set((state) => {
-            console.log("update ", index, position, person, checked)
-            const ballotWithIndex = state.votes.find(b => b.index == index) ?? {
-                index: index,
-                vote: new Map<PositionKey, Map<PersonKey, boolean>>()
-            } as Ballot;
-            const positionVote = ballotWithIndex.vote.get(position) ?? new Map<PersonKey, boolean>();
-            ballotWithIndex.vote.set(position, positionVote.set(person, checked))
+export function createNewBallot(index: number) {
+    console.log('create new ballot', index)
+    return {
+        index: index,
+        vote: new Map<PositionKey, Map<PersonKey, boolean>>()
+    } as Ballot;
+}
 
-            console.log("updated", ballotWithIndex)
-            const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([ballotWithIndex])
-            console.log("new state", updatedState)
-            return ({
-                votes: updatedState
-            });
-        }),
-        nextVote: () => set((state) => ({currentVoteIndex: state.currentVoteIndex + 1})),
-        previousVote: () => set((state) => ({currentVoteIndex: state.currentVoteIndex - 1}))
-    })
+export const useVoteStore = create<VotesState>((set) => {
+        const DEFAULT = {
+            votes: [createNewBallot(0)],
+            currentVoteIndex: 0
+        }
+        return ({
+            ...DEFAULT,
+            addVotes: (newVote) => set((state) => ({votes: state.votes.concat([newVote])})),
+            setVoteIndex: (newVoteIndex) => set(() => {
+                console.log("setVoteIndex", newVoteIndex)
+                return ({currentVoteIndex: newVoteIndex});
+            }),
+            saveVote: (ballotToAdd) => set((state) => {
+                return ({votes: state.votes.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
+            }),
+            setBallotVote: (index, position, person, checked) => set((state) => {
+                console.log("setBallotVote", index, position, person, checked)
+                console.log("update ", index, position, person, checked)
+                const ballotWithIndex = state.votes.find(b => b.index == index) ?? createNewBallot(index);
+                const positionVote = ballotWithIndex.vote.get(position) ?? new Map<PersonKey, boolean>();
+                ballotWithIndex.vote.set(position, positionVote.set(person, checked))
+
+                console.log("updated", ballotWithIndex)
+                const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([ballotWithIndex])
+                console.log("new state", updatedState)
+                return ({
+                    votes: updatedState
+                });
+            }),
+            nextVote: () => set((state) => {
+                const nextVoteIndex = state.currentVoteIndex + 1;
+                let updatedVotes;
+                if (!state.votes.find(b => b.index == nextVoteIndex)) {
+                    updatedVotes = state.votes.concat([createNewBallot(nextVoteIndex)])
+                } else {
+                    updatedVotes = state.votes
+                }
+                console.log("nextVote", nextVoteIndex)
+                return ({currentVoteIndex: nextVoteIndex, votes: updatedVotes});
+            }),
+            previousVote: () => set((state) => ({currentVoteIndex: state.currentVoteIndex - 1}))
+        });
+    }
 )
 
 export interface Ballot {
