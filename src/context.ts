@@ -37,9 +37,9 @@ export function usePositions() {
     return useContext(PositionsContext);
 }
 
-interface VotesState {
-    votes: Array<Ballot>
-    currentVoteIndex: number
+interface BallotState {
+    ballots: Array<Ballot>
+    currentBallotIndex: number
     addVotes: (newVote: Ballot) => void
     nextVote: () => void
     previousVote: () => void
@@ -57,50 +57,66 @@ export function createNewBallot(index: number) {
     } as Ballot;
 }
 
-export const useVoteStore = create<VotesState>()(persist(
+export const useBallotStore = create<BallotState>()(persist(
     (set) => {
         const DEFAULT = {
-            votes: [createNewBallot(0)],
-            currentVoteIndex: 0
+            ballots: [createNewBallot(0)],
+            currentBallotIndex: 0
         }
         return ({
             ...DEFAULT,
-            addVotes: (newVote) => set((state) => ({votes: state.votes.concat([newVote])})),
-            setVoteIndex: (newVoteIndex) => set(() => {
-                console.log("setVoteIndex", newVoteIndex)
-                return ({currentVoteIndex: newVoteIndex});
+            addVotes: (newVote) => set((state) => ({ballots: state.ballots.concat([newVote])})),
+            setVoteIndex: (newBallotIndex) => set(() => {
+                console.log("setVoteIndex", newBallotIndex)
+                return ({currentBallotIndex: newBallotIndex});
             }),
             saveVote: (ballotToAdd) => set((state) => {
-                return ({votes: state.votes.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
+                return ({ballots: state.ballots.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
             }),
             setBallotVote: (index, position, person, checked) => set((state) => {
                 console.log("setBallotVote", index, position, person, checked)
-                const updatedBallot = state.votes.find(b => b.index == index) ?? createNewBallot(index);
+
+                const updatedBallot = state.ballots.find(b => b.index == index) ?? createNewBallot(index);
+                if (person == "invalid" && checked) {
+                    // remove all votes, add invalid
+                    updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position)
+                        .concat({
+                            position,
+                            person
+                        } as Vote)
+                } else if (checked) {
+                    // add
+                    updatedBallot.vote = updatedBallot.vote
+                        .filter(v => v.position!=position || v.person !== "invalid")
+                        .concat({
+                            position,
+                            person
+                        } as Vote)
+                } else {
+                    // remove
+                    updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position || v.person != person)
+                }
                 // replace one vote within the ballot
-                updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position || v.person != person).concat({
-                    position,
-                    person,
-                    checked
-                } as Vote)
+
                 // replace one ballot in the list of ballots
-                const updatedState = state.votes.filter((ballot: Ballot) => ballot.index != index).concat([updatedBallot])
+                const updatedBallots = state.ballots.filter((ballot: Ballot) => ballot.index != index).concat([updatedBallot])
                 return ({
-                    votes: updatedState
+                    ballots: updatedBallots
                 });
             }),
             nextVote: () => set((state) => {
-                const nextVoteIndex = state.currentVoteIndex + 1;
-                let updatedVotes;
-                if (!state.votes.find(b => b.index == nextVoteIndex)) {
+                const newBallotIndex = state.currentBallotIndex + 1;
+                let updatedBallots;
+                if (!state.ballots.find(b => b.index == newBallotIndex)) {
                     // create empty ballot if not existing
-                    updatedVotes = state.votes.concat([createNewBallot(nextVoteIndex)])
+                    updatedBallots = state.ballots.concat([createNewBallot(newBallotIndex)])
                 } else {
-                    updatedVotes = state.votes
+                    updatedBallots = state.ballots
                 }
-                console.log("nextVote", nextVoteIndex)
-                return ({currentVoteIndex: nextVoteIndex, votes: updatedVotes});
+                console.log("nextVote", newBallotIndex)
+                return ({currentBallotIndex: newBallotIndex, ballots: updatedBallots});
             }),
-            previousVote: () => set((state) => ({currentVoteIndex: state.currentVoteIndex - 1}))
+            previousVote: () => set((state) => ({currentBallotIndex: state.currentBallotIndex - 1}))
         });
     },
     {
@@ -116,5 +132,4 @@ export interface Ballot {
 export interface Vote {
     position: PositionKey
     person: PersonKey
-    checked: boolean
 }
