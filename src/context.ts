@@ -20,7 +20,11 @@ export const PositionsContext = createContext([{
             {key: "ouderling1", name: "Ouderling 1"},
             {key: "ouderling2", name: "Ouderling 2"},
             {key: "ouderling3", name: "Ouderling 3"},
-            {key: "ouderling4", name: "Ouderling 4"}
+            {key: "ouderling4", name: "Ouderling 4"},
+            // {key: "ouderling5", name: "Ouderling 5"},
+            // {key: "ouderling6", name: "Ouderling 6"},
+            // {key: "ouderling7", name: "Ouderling 7"},
+            // {key: "ouderling8", name: "Ouderling 8"}
         ]
     },
     {
@@ -87,7 +91,7 @@ export const useBallotStore = create<BallotState>()(persist(
                 } else if (checked) {
                     // add
                     updatedBallot.vote = updatedBallot.vote
-                        .filter(v => v.position!=position || v.person !== "invalid")
+                        .filter(v => v.position != position || v.person !== "invalid")
                         .concat({
                             position,
                             person
