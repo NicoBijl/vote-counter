@@ -48,10 +48,10 @@ export function Results() {
 
     return (
         <>
-            <Grid container alignItems={"stretch"}>
-                <Grid item container alignItems={"stretch"}>
+            <Grid container>
+                <Grid item container>
                     {positions.map((position) => (
-                        <Grid item xs={6} sm={4} key={"votes-" + position.key} marginTop={2}>
+                        <Grid item xs={6} sm={4} key={"votes-" + position.key}>
                             <Typography variant="h4">{position.title}</Typography>
                             <Typography variant="subtitle2">Max: {position.max}</Typography>
                             <List>
@@ -66,7 +66,7 @@ export function Results() {
                         </Grid>
                     ))}
                     {positions.map((position) => (
-                        <Grid item xs={6} sm={4} key={"rest-" + position.key} marginBottom={2} sx={{mt: 2}}>
+                        <Grid item xs={6} sm={4} key={"rest-" + position.key}>
                             <List>
                                 <ListItem disableGutters>
                                     <Chip label={countVoted(position.key, "invalid")} variant="outlined" sx={{mr: 2}}/>
@@ -76,7 +76,6 @@ export function Results() {
                                     <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
                                     Blank
                                 </ListItem>
-
                                 <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="left">
                                     <ListItem disableGutters>
                                         <Chip label={electoralDivisor(position.key)} variant="outlined" sx={{mr: 2}}/>
@@ -87,7 +86,7 @@ export function Results() {
                         </Grid>
                     ))}
                 </Grid>
-                <Grid container xs={6} alignContent="flex-start">
+                <Grid container xs={6}>
                     <Grid item xs={6}>
                         Total Ballots:
                     </Grid>
