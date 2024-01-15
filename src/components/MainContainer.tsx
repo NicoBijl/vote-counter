@@ -14,12 +14,12 @@ import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import {usePositions} from "../../context.ts";
-import NavItems from "./listItems.tsx";
-import {Dashboard} from "../../components/Dashboard.tsx";
-import {Votes} from "../../components/Votes.tsx";
-import {Positions} from "../../components/Positions.tsx";
-import {Results} from "../../components/Results.tsx";
+import NavItems from "./NavItems.tsx";
+import {Dashboard} from "./pages/Dashboard.tsx";
+import {Votes} from "./pages/Votes.tsx";
+import {Positions} from "./pages/Positions.tsx";
+import {Results} from "./pages/Results.tsx";
+import {Settings} from "./pages/Settings.tsx";
 
 const drawerWidth: number = 240;
 
@@ -76,7 +76,6 @@ const defaultTheme = createTheme();
 
 
 export default function MainContainer() {
-    const positions = usePositions()
     const [open, setOpen] = React.useState(true);
     const [page, setPage] = React.useState('dashboard');
     const toggleDrawer = () => {
@@ -155,11 +154,15 @@ export default function MainContainer() {
                             {/* Chart */}
                             <Grid item xs={12} md={12} lg={12}>
                                 <Paper sx={{p: 2}}>
-                                    <Typography component="h1" variant="h3" color="primary">{page}</Typography>
+                                    <Typography component="h1" variant="h3" color="primary"
+                                                sx={{textTransform: "capitalize"}}>
+                                        {page}
+                                    </Typography>
                                     {(page == 'dashboard') && <Dashboard/>}
                                     {(page == 'results') && <Results/>}
                                     {(page == 'positions') && <Positions/>}
                                     {(page == 'votes') && <Votes/>}
+                                    {(page == 'settings') && <Settings/>}
                                 </Paper>
                             </Grid>
                         </Grid>

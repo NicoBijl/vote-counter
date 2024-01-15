@@ -1,4 +1,4 @@
-import {usePositions} from "../context.ts";
+import {usePositions} from "../../context.ts";
 
 export function Positions() {
     const positions = usePositions()
@@ -6,7 +6,7 @@ export function Positions() {
     return (
         <>
             <ul>
-                {positions.map((position, positionIndex) => (
+                {positions.map((position) => (
                     <li key={position.key}>
                         {position.title}
                         <ul>

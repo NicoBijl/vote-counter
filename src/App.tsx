@@ -1,5 +1,5 @@
 import './App.css'
-import MainContainer from "./templates/dashboard/MainContainer.tsx";
+import MainContainer from "./components/MainContainer.tsx";
 import {PositionsContext, usePositions} from "./context.ts";
 
 

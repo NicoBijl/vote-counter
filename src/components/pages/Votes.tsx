@@ -1,6 +1,6 @@
-import {usePositions, useBallotStore} from "../context.ts";
+import {usePositions, useBallotStore} from "../../context.ts";
 import {Button, Checkbox, FormControlLabel, Pagination} from "@mui/material";
-import {PersonKey, PositionKey} from "../types.ts";
+import {PersonKey, PositionKey} from "../../types.ts";
 import {ChangeEvent} from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";

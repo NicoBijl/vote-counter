@@ -1,6 +1,6 @@
-import {useBallotStore, usePositions} from "../context.ts";
+import {useBallotStore, usePositions} from "../../context.ts";
 import Grid from "@mui/material/Grid";
-import {PersonKey, PositionKey} from "../types.ts";
+import {PersonKey, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
 import {Chip, ListItem, Tooltip} from "@mui/material";
 import List from "@mui/material/List";

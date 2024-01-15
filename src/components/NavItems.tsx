@@ -5,6 +5,7 @@ import HouseIcon from '@mui/icons-material/House';
 import BallotIcon from '@mui/icons-material/Ballot';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 interface NavItemsProps {
     onClick: (nextPage: string) => void
@@ -37,6 +38,12 @@ export default function NavItems({onClick}: NavItemsProps) {
                     <BallotIcon/>
                 </ListItemIcon>
                 <ListItemText primary="Votes"/>
+            </ListItemButton>
+            <ListItemButton onClick={() => onClick('settings')}>
+                <ListItemIcon>
+                    <SettingsIcon/>
+                </ListItemIcon>
+                <ListItemText primary="Settings"/>
             </ListItemButton>
         </>
     );
