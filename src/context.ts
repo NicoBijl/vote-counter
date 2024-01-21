@@ -1,9 +1,8 @@
-import {createContext, useContext} from "react";
 import {PersonKey, Position, PositionKey} from "./types.ts";
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
 
-export const PositionsContext = createContext([{
+const defaultPositions = [{
     max: 1,
     key: "diaken",
     title: "Diaken",
@@ -20,11 +19,7 @@ export const PositionsContext = createContext([{
             {key: "ouderling1", name: "Ouderling 1"},
             {key: "ouderling2", name: "Ouderling 2"},
             {key: "ouderling3", name: "Ouderling 3"},
-            {key: "ouderling4", name: "Ouderling 4"},
-            // {key: "ouderling5", name: "Ouderling 5"},
-            // {key: "ouderling6", name: "Ouderling 6"},
-            // {key: "ouderling7", name: "Ouderling 7"},
-            // {key: "ouderling8", name: "Ouderling 8"}
+            {key: "ouderling4", name: "Ouderling 4"}
         ]
     },
     {
@@ -35,10 +30,21 @@ export const PositionsContext = createContext([{
             {key: "sec1", name: "Secretaris 1"}
         ]
     }
-] as Array<Position>);
+] as Array<Position>;
 
-export function usePositions() {
-    return useContext(PositionsContext);
+export const usePositionsStore = create<PositionStore>()(persist(
+    (set) => {
+        return ({
+            positions: defaultPositions
+        })
+    },
+    {
+        name: "positions-store", // by default localStorage is used.
+    }
+))
+
+interface PositionStore {
+    positions: Array<Position>
 }
 
 interface BallotState {

@@ -1,4 +1,4 @@
-import {usePositions, useBallotStore} from "../../context.ts";
+import {useBallotStore, usePositionsStore} from "../../context.ts";
 import {Button, Checkbox, FormControlLabel, Pagination} from "@mui/material";
 import {PersonKey, PositionKey} from "../../types.ts";
 import {ChangeEvent} from "react";
@@ -7,11 +7,12 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import Paper from "@mui/material/Paper";
 
 export function Votes() {
     const {ballots, currentBallotIndex, nextVote, previousVote, setVoteIndex, setBallotVote} = useBallotStore()
     const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex)!)
-    const positions = usePositions()
+    const {positions} = usePositionsStore()
 
     function togglePerson(position: PositionKey, person: PersonKey, checked: boolean) {
         console.log("Toggle", position, person, currentVote)
@@ -31,86 +32,89 @@ export function Votes() {
     }
 
     return <>
-        <Grid container alignItems={"stretch"}>
-            <Grid item xs sx={{pr: 4}}>
-                <Button variant="outlined" sx={{height: '100%', width: '100%'}}
-                        aria-label="previous vote"
-                        disabled={currentBallotIndex == 0}
-                        onClick={previousVote}>
-                    <KeyboardArrowLeftIcon/>
-                </Button>
-            </Grid>
-            <Grid item xs={10}>
-                <Grid item container>
-                    <Grid item xs={12}>
-                        <Typography variant="h3">Vote: {currentBallotIndex + 1}</Typography>
-                    </Grid>
+        <Paper sx={{p: 1}}>
+            <Grid container spacing={1} alignItems={"stretch"}>
+                <Grid item md sm={12}>
+                    <Button variant="outlined" sx={{height: '100%', width: '100%'}}
+                            aria-label="previous vote"
+                            disabled={currentBallotIndex == 0}
+                            onClick={previousVote}>
+                        <KeyboardArrowLeftIcon/>
+                    </Button>
+                </Grid>
+                <Grid item xs={10}>
+                    <Grid item container>
+                        <Grid item xs={12}>
+                            <Typography variant="h2" sx={{textAlign: "center"}}>Vote:
+                                # {currentBallotIndex + 1}</Typography>
+                        </Grid>
 
 
-                    {positions.map((position) =>
-                        <Grid item xs={6} sm={4} key={position.key} marginBottom={2} marginTop={2}>
-                            <Typography variant="h4">{position.title}</Typography>
-                            <Typography variant="subtitle2">Max: {position.max}</Typography>
-                            {position.persons.map((person) => (
-                                <Box key={person.key}>
+                        {positions.map((position) =>
+                            <Grid item xs={6} sm={4} key={position.key} marginBottom={2} marginTop={2}>
+                                <Typography variant="h4">{position.title}</Typography>
+                                <Typography variant="subtitle2">Max: {position.max}</Typography>
+                                {position.persons.map((person) => (
+                                    <Box key={person.key}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    onChange={(_event, checked) => togglePerson(position.key, person.key, checked)}
+                                                    checked={isChecked(position.key, person.key)}
+                                                    disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
+                                                />
+                                            }
+                                            label={person.name}/>
+                                    </Box>
+                                ))}
+                                <Box>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                onChange={(_event, checked) => togglePerson(position.key, person.key, checked)}
-                                                checked={isChecked(position.key, person.key)}
-                                                disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
+                                                onChange={(_event, checked) => togglePerson(position.key, "invalid", checked)}
+                                                checked={isChecked(position.key, "invalid")}
                                             />
                                         }
-                                        label={person.name}/>
+                                        label="Invalid"/>
                                 </Box>
-                            ))}
-                            <Box>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            onChange={(_event, checked) => togglePerson(position.key, "invalid", checked)}
-                                            checked={isChecked(position.key, "invalid")}
-                                        />
-                                    }
-                                    label="Invalid"/>
-                            </Box>
+                            </Grid>
+                        )}
+                        <Grid item xs={12}>
+                            <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}>
+                                Next Vote
+                            </Button>
                         </Grid>
-                    )}
-                    <Grid item xs={12}>
-                        <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}>
-                            Next Vote
-                        </Button>
                     </Grid>
                 </Grid>
-            </Grid>
-            <Grid item xs sx={{pl: 4}}>
-                <Button variant="outlined" sx={{height: '100%', width: '100%'}} aria-label="next vote"
-                        onClick={nextVote}
-                        disabled={currentBallotIndex == ballots.length - 1}>
-                    <KeyboardArrowRightIcon/>
-                </Button>
+                <Grid item md sm={12}>
+                    <Button variant="outlined" sx={{height: '100%', width: '100%'}} aria-label="next vote"
+                            onClick={nextVote}
+                            disabled={currentBallotIndex == ballots.length - 1}>
+                        <KeyboardArrowRightIcon/>
+                    </Button>
+                </Grid>
+
+                <Grid item xs={12} alignContent="stretch">
+                    <Pagination
+                        count={Math.max(ballots.length, 1)}
+                        color="primary"
+                        page={currentBallotIndex + 1}
+                        showFirstButton showLastButton
+                        onChange={handleVoteChange}
+                        siblingCount={3}
+                        sx={{mt: 2, mb: 4, justifyContent: "center", display: "flex"}}
+                    />
+                </Grid>
             </Grid>
 
-            <Grid item xs={12} alignContent="stretch">
-                <Pagination
-                    count={Math.max(ballots.length, 1)}
-                    color="primary"
-                    page={currentBallotIndex + 1}
-                    showFirstButton showLastButton
-                    onChange={handleVoteChange}
-                    siblingCount={3}
-                    sx={{mt: 2, mb: 4, justifyContent: "center", display: "flex"}}
-                />
-            </Grid>
-        </Grid>
 
-
-        {/*<ul>*/}
-        {/*    {currentVote?.vote.map((vote, index) => (*/}
-        {/*        <li key={"vote-" + index}>*/}
-        {/*            vote : {vote.position} / {vote.person}*/}
-        {/*        </li>*/}
-        {/*    ))}*/}
-        {/*</ul>*/}
+            {/*<ul>*/}
+            {/*    {currentVote?.vote.map((vote, index) => (*/}
+            {/*        <li key={"vote-" + index}>*/}
+            {/*            vote : {vote.position} / {vote.person}*/}
+            {/*        </li>*/}
+            {/*    ))}*/}
+            {/*</ul>*/}
+        </Paper>
     </>;
 }

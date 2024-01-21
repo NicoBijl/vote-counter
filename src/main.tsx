@@ -8,8 +8,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <ThemeProvider theme={createTheme({
             palette: {
-                mode: 'dark',
             },
+            components: {
+                MuiTextField: {
+                    defaultProps: {
+                        variant: "filled",
+                        margin: "dense",
+                        fullWidth: true
+                    }
+                },
+                MuiButton: {
+                    defaultProps: {
+                        variant: "contained"
+                    }
+                }
+            }
         })}>
             <CssBaseline/>
 

@@ -1,13 +1,14 @@
-import {useBallotStore, usePositions} from "../../context.ts";
+import {useBallotStore, usePositionsStore} from "../../context.ts";
 import Grid from "@mui/material/Grid";
 import {PersonKey, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
 import {Chip, ListItem, Tooltip} from "@mui/material";
 import List from "@mui/material/List";
 import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
 
 export function Results() {
-    const positions = usePositions()
+    const {positions} = usePositionsStore()
     const {ballots} = useBallotStore()
 
     function calcElectoralDivisor(positionKey: PositionKey): string {
@@ -48,65 +49,69 @@ export function Results() {
 
     return (
         <>
-            <Grid container>
-                <Grid item container>
-                    {positions.map((position) => (
-                        <Grid item xs={6} sm={4} key={"votes-" + position.key}>
-                            <Typography variant="h4">{position.title}</Typography>
-                            <Typography variant="subtitle2">Max: {position.max}</Typography>
-                            <List>
-                                {position.persons.sort((p1, p2) => countVoted(position.key, p2.key) - countVoted(position.key, p1.key)).map((person) => (
-                                    <ListItem disableGutters key={person.key}>
-                                        <Chip label={countVoted(position.key, person.key)} variant="filled"
-                                              color={chipColor(position.key, person.key)} sx={{mr: 2}}/>
-                                        <ListItemText>{person.name}</ListItemText>
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Grid>
-                    ))}
-                    {positions.map((position) => (
-                        <Grid item xs={6} sm={4} key={"rest-" + position.key}>
-                            <List>
-                                <ListItem disableGutters>
-                                    <Chip label={countVoted(position.key, "invalid")} variant="outlined" sx={{mr: 2}}/>
-                                    Invalid
-                                </ListItem>
-                                <ListItem disableGutters>
-                                    <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
-                                    Blank
-                                </ListItem>
-                                <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="left">
+            <Paper sx={{p: 2}}>
+                <Grid container>
+                    <Grid item container>
+                        {positions.map((position) => (
+                            <Grid item xs={6} sm={4} key={"votes-" + position.key}>
+                                <Typography variant="h4">{position.title}</Typography>
+                                <Typography variant="subtitle2">Max: {position.max}</Typography>
+                                <List>
+                                    {position.persons.sort((p1, p2) => countVoted(position.key, p2.key) - countVoted(position.key, p1.key)).map((person) => (
+                                        <ListItem disableGutters key={person.key}>
+                                            <Chip label={countVoted(position.key, person.key)} variant="filled"
+                                                  color={chipColor(position.key, person.key)} sx={{mr: 2}}/>
+                                            <ListItemText>{person.name}</ListItemText>
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </Grid>
+                        ))}
+                        {positions.map((position) => (
+                            <Grid item xs={6} sm={4} key={"rest-" + position.key}>
+                                <List>
                                     <ListItem disableGutters>
-                                        <Chip label={electoralDivisor(position.key)} variant="outlined" sx={{mr: 2}}/>
-                                        <span>Electoral Divisor</span>
+                                        <Chip label={countVoted(position.key, "invalid")} variant="outlined"
+                                              sx={{mr: 2}}/>
+                                        Invalid
                                     </ListItem>
-                                </Tooltip>
-                            </List>
+                                    <ListItem disableGutters>
+                                        <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
+                                        Blank
+                                    </ListItem>
+                                    <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="left">
+                                        <ListItem disableGutters>
+                                            <Chip label={electoralDivisor(position.key)} variant="outlined"
+                                                  sx={{mr: 2}}/>
+                                            <span>Electoral Divisor</span>
+                                        </ListItem>
+                                    </Tooltip>
+                                </List>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    <Grid container xs={6}>
+                        <Grid item xs={6}>
+                            Total Ballots:
                         </Grid>
-                    ))}
-                </Grid>
-                <Grid container xs={6}>
-                    <Grid item xs={6}>
-                        Total Ballots:
-                    </Grid>
-                    <Grid item xs={6}>
-                        {ballots.length}
-                    </Grid>
-                    <Grid item xs={6}>
-                        Total allowed voters:
-                    </Grid>
-                    <Grid item xs={6}>
-                        {ballots.length} ??
-                    </Grid>
-                    <Grid item xs={6}>
-                        Attendance:
-                    </Grid>
-                    <Grid item xs={6}>
-                        {ballots.length} %
+                        <Grid item xs={6}>
+                            {ballots.length}
+                        </Grid>
+                        <Grid item xs={6}>
+                            Total allowed voters:
+                        </Grid>
+                        <Grid item xs={6}>
+                            {ballots.length} ??
+                        </Grid>
+                        <Grid item xs={6}>
+                            Attendance:
+                        </Grid>
+                        <Grid item xs={6}>
+                            {ballots.length} %
+                        </Grid>
                     </Grid>
                 </Grid>
-            </Grid>
+            </Paper>
         </>
     );
 }

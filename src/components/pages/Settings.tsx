@@ -8,6 +8,12 @@ export function Settings() {
                 Hi
             </Typography>
 
+            {/* TODO:
+                - Reset / Remove all votes
+                - Change formula for electoral divisor
+                - Download Positions
+                - Download Ballots
+            */}
         </>
     );
 }
