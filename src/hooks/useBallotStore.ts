@@ -1,56 +1,12 @@
-import {PersonKey, Position, PositionKey} from "./types.ts";
+import {PersonKey, PositionKey} from "../types.ts";
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
-
-const defaultPositions = [{
-    max: 1,
-    key: "diaken",
-    title: "Diaken",
-    persons: [
-        {key: "diaken1", name: "Diaken 1"},
-        {key: "diaken2", name: "Diaken 2"}
-    ]
-},
-    {
-        max: 2,
-        key: "ouderling",
-        title: "Ouderling",
-        persons: [
-            {key: "ouderling1", name: "Ouderling 1"},
-            {key: "ouderling2", name: "Ouderling 2"},
-            {key: "ouderling3", name: "Ouderling 3"},
-            {key: "ouderling4", name: "Ouderling 4"}
-        ]
-    },
-    {
-        max: 1,
-        key: "secretaris",
-        title: "Secretaris",
-        persons: [
-            {key: "sec1", name: "Secretaris 1"}
-        ]
-    }
-] as Array<Position>;
-
-export const usePositionsStore = create<PositionStore>()(persist(
-    (set) => {
-        return ({
-            positions: defaultPositions
-        })
-    },
-    {
-        name: "positions-store", // by default localStorage is used.
-    }
-))
-
-interface PositionStore {
-    positions: Array<Position>
-}
 
 interface BallotState {
     ballots: Array<Ballot>
     currentBallotIndex: number
     addVotes: (newVote: Ballot) => void
+    removeAllBallots: () => void
     nextVote: () => void
     previousVote: () => void
     setVoteIndex: (index: number) => void
@@ -76,6 +32,7 @@ export const useBallotStore = create<BallotState>()(persist(
         return ({
             ...DEFAULT,
             addVotes: (newVote) => set((state) => ({ballots: state.ballots.concat([newVote])})),
+            removeAllBallots: () => set(()=> ({ballots: [createNewBallot(0)], currentBallotIndex: 0})),
             setVoteIndex: (newBallotIndex) => set(() => {
                 console.log("setVoteIndex", newBallotIndex)
                 return ({currentBallotIndex: newBallotIndex});

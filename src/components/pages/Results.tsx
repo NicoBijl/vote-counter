@@ -1,4 +1,3 @@
-import {useBallotStore, usePositionsStore} from "../../context.ts";
 import Grid from "@mui/material/Grid";
 import {PersonKey, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
@@ -6,21 +5,30 @@ import {Chip, ListItem, Tooltip} from "@mui/material";
 import List from "@mui/material/List";
 import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
+import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
+import {useBallotStore} from "../../hooks/useBallotStore.ts";
+import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 export function Results() {
     const {positions} = usePositionsStore()
     const {ballots} = useBallotStore()
+    const {electoralDivisorVariable} = useSettingsStore()
 
     function calcElectoralDivisor(positionKey: PositionKey): string {
+        const persons = positions.find(p => p.key == positionKey)!.persons.length
         const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == positionKey && v.person != "invalid").length
-        return "roundUp((validVotes / positions * 0.8) + 0.6)" +
-            "\n" +
-            "Math.ceil((" + validVotes + " / " + positions.length + " * 0.8) + 0.6)"
+        return `Math.ceil(${validVotes} / ${persons} * ${electoralDivisorVariable})`
+        // roundUp(validVotes / persons * ${electoralDivisorVariable})
+        // (117+76+101+59 )/4*0.8 == 70.6 => 71
+        // (84+73+116+156)/4*.8 == 85.8 => 71
+        // (100+74+109+86+93+145)/6*.8 == 80.9333 => 81
+        // (170+86)/2*.8 == 102.4 => 103
     }
 
     function electoralDivisor(positionKey: PositionKey): number {
+        const persons = positions.find(p => p.key == positionKey)!.persons.length
         const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == positionKey && v.person != "invalid").length
-        return Math.ceil((validVotes / positions.length * 0.8) + 0.6)
+        return Math.ceil(validVotes / persons * electoralDivisorVariable)
     }
 
     function countVoted(positionKey: PositionKey, personKey: PersonKey): number {
@@ -79,7 +87,7 @@ export function Results() {
                                         <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
                                         Blank
                                     </ListItem>
-                                    <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="left">
+                                    <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="bottom-start">
                                         <ListItem disableGutters>
                                             <Chip label={electoralDivisor(position.key)} variant="outlined"
                                                   sx={{mr: 2}}/>
@@ -89,26 +97,6 @@ export function Results() {
                                 </List>
                             </Grid>
                         ))}
-                    </Grid>
-                    <Grid container xs={6}>
-                        <Grid item xs={6}>
-                            Total Ballots:
-                        </Grid>
-                        <Grid item xs={6}>
-                            {ballots.length}
-                        </Grid>
-                        <Grid item xs={6}>
-                            Total allowed voters:
-                        </Grid>
-                        <Grid item xs={6}>
-                            {ballots.length} ??
-                        </Grid>
-                        <Grid item xs={6}>
-                            Attendance:
-                        </Grid>
-                        <Grid item xs={6}>
-                            {ballots.length} %
-                        </Grid>
                     </Grid>
                 </Grid>
             </Paper>

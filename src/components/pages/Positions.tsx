@@ -1,4 +1,3 @@
-import {usePositionsStore} from "../../context.ts";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import {Button, Stack, TextField} from "@mui/material";
@@ -6,6 +5,7 @@ import Divider from "@mui/material/Divider";
 import AddIcon from '@mui/icons-material/Add';
 import Paper from "@mui/material/Paper";
 import {PositionKey} from "../../types.ts";
+import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 
 
 export function Positions() {

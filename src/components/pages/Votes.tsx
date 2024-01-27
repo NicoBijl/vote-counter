@@ -1,4 +1,3 @@
-import {useBallotStore, usePositionsStore} from "../../context.ts";
 import {Button, Checkbox, FormControlLabel, Pagination} from "@mui/material";
 import {PersonKey, PositionKey} from "../../types.ts";
 import {ChangeEvent} from "react";
@@ -8,10 +7,12 @@ import Grid from "@mui/material/Grid";
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import Paper from "@mui/material/Paper";
+import {useBallotStore} from "../../hooks/useBallotStore.ts";
+import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 
 export function Votes() {
     const {ballots, currentBallotIndex, nextVote, previousVote, setVoteIndex, setBallotVote} = useBallotStore()
-    const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex)!)
+    const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex))
     const {positions} = usePositionsStore()
 
     function togglePerson(position: PositionKey, person: PersonKey, checked: boolean) {
@@ -28,6 +29,9 @@ export function Votes() {
     }
 
     function maxReached(positionKey: PositionKey): boolean {
+        console.log("currentBallotIndex", currentBallotIndex)
+        console.log("currentVote", currentVote)
+        console.log("currentVote.vote", currentVote.vote)
         return currentVote.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
     }
 

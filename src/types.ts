@@ -5,6 +5,10 @@ export interface Position {
     persons: Array<Person>
 }
 
+export function isPosition(object: any): object is Position {
+    return 'key' in object && 'title' in object && 'persons' in object && 'max' in object
+}
+
 export interface Person {
     key: PersonKey,
     name: string
