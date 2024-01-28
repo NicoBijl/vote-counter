@@ -1,30 +1,46 @@
-# React + TypeScript + Vite
+# Vote Counter App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Vote Counter App is a robust and user-friendly application built using React with Vite, designed to streamline and
+simplify the process of counting votes in elections. This application is tailored for organizations and groups needing
+an efficient method to tally votes, manage positions, and display election results. With a focus on accuracy and ease of
+use, the Vote Counter App offers a comprehensive solution for managing and understanding electoral outcomes.
 
-Currently, two official plugins are available:
+## Domain Language:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Voters**: Individuals who participate in the voting process to select candidates for various positions.
+- **Candidates**: People nominated or running for election to a position.
+- **Positions**: Specific roles or titles candidates are competing for in an election.
+- **Ballots**: Physical or digital records of voters' choices, indicating their preferred candidates for each position.
+- **Votes**: Individual selections made by voters for candidates in various positions.
+- **Electoral Divisor**: The number of votes a candidate needs to be elected. Can be configured for different situations.
 
-## Expanding the ESLint configuration
+## Functionalities
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Modify Positions**: Allows to add, remove, or modify the positions available in the election.
+- **Register and Edit Ballots Containing Votes**: Facilitates the entry of ballot information and the ability to make
+  changes if necessary.
+- **Show Results**: Displays the election results in a clear and concise manner, potentially with graphical
+  representations for better understanding.
+- **Modify Settings**: Enables customization of the app settings to suit different election types and preferences.
 
-- Configure the top-level `parserOptions` property like this:
+## Additional Functionalities
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+- **Real-Time Vote Tallying**: Continuously updates vote counts as ballots are entered, providing up-to-date results.
+- **Data Validation and Integrity Checks**: Ensures that all entered data is valid and consistent, reducing the chances
+  of errors in the voting process.
+- **Accessibility Features**: Makes the app usable for people with different abilities, including those who rely on
+  screen readers or need high-contrast visuals.
+- **Multi-Device Synchronization**: Ensures that results are consistent across different devices and identifies
+  discrepancies in real-time.
+- **Position-Based Voting Rules**: Customizes voting rules based on the position, such as allowing single or multiple
+  votes per position.
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Todo:
+
+- Complete the README with detailed instructions and information.
+- add the total number of allowed voters to calculated a attendance ratio.
+- Implement a feature to sort candidates by vote count in the results component.
+- Develop a positions editor for easy management of election positions.
+- Create comprehensive documentation for the dashboard to assist users.
+- Set up Continuous Integration/Continuous Deployment (CI/CD) for efficient development and deployment.
+- Add functionality to synchronize results across devices and verify consistency of ballots and vote counts.

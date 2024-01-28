@@ -112,22 +112,19 @@ export function Settings() {
                     <Stack spacing={2}>
                         <Typography variant={"h4"}>Results</Typography>
 
-                        <Paper variant={"outlined"} sx={{p: 1}}>
-                            Electoral Divisor
-                            <TextField inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
-                                       label="Electoral Divisor"
-                                       defaultValue={electoralDivisorVariable}
-                                       onChange={(e) => {
-                                           const value = Number(e.target.value) || 0
-                                           if (value != 0) {
-                                               console.log('updating electoralDivisorVariable to ', value)
-                                               setElectoralDivisorVariable(value);
-                                           }
+                        <TextField inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
+                                   label="Electoral Divisor"
+                                   defaultValue={electoralDivisorVariable}
+                                   onChange={(e) => {
+                                       const value = Number(e.target.value) || 0
+                                       if (value != 0) {
+                                           console.log('updating electoralDivisorVariable to ', value)
+                                           setElectoralDivisorVariable(value);
                                        }
-                                       }/>
+                                   }
+                                   }/>
 
-                            {/*    Add sort by vote count toggle */}
-                        </Paper>
+                        {/*    Add sort by vote count toggle */}
                     </Stack>
                 </Card>
 

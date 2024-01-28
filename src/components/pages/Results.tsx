@@ -1,13 +1,14 @@
 import Grid from "@mui/material/Grid";
 import {PersonKey, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
-import {Chip, ListItem, Tooltip} from "@mui/material";
+import {Alert, Chip, ListItem, Tooltip} from "@mui/material";
 import List from "@mui/material/List";
 import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
+import Divider from "@mui/material/Divider";
 
 export function Results() {
     const {positions} = usePositionsStore()
@@ -57,6 +58,12 @@ export function Results() {
 
     return (
         <>
+            <Alert severity={"info"} sx={{mb: 2}}>
+                This page displays the detailed results of the election. It shows each position along with the list of
+                candidates and their respective vote counts. Additionally, the number of blank and invalid votes are
+                clearly indicated. Candidates who have received more or equal votes than the electoral divisor are
+                highlighted in green, signifying their leading status.
+            </Alert>
             <Paper sx={{p: 2}}>
                 <Grid container>
                     <Grid item container>
@@ -75,8 +82,10 @@ export function Results() {
                                 </List>
                             </Grid>
                         ))}
+
                         {positions.map((position) => (
                             <Grid item xs={6} sm={4} key={"rest-" + position.key}>
+                                <Divider variant={"middle"} ></Divider>
                                 <List>
                                     <ListItem disableGutters>
                                         <Chip label={countVoted(position.key, "invalid")} variant="outlined"

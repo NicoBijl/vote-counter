@@ -1,6 +1,6 @@
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-import {Button, Stack, TextField} from "@mui/material";
+import {Alert, Button, Stack, TextField} from "@mui/material";
 import Divider from "@mui/material/Divider";
 import AddIcon from '@mui/icons-material/Add';
 import Paper from "@mui/material/Paper";
@@ -22,9 +22,10 @@ export function Positions() {
 
     return (
         <>
-            <Typography>
-                Modifying the keys should only be done before starting the vote-counting process.
-            </Typography>
+            <Alert severity={"warning"} sx={{mb: 2}}>
+                Please update position keys only before vote registration. Changes made afterwards may
+                lead to malfunctions.
+            </Alert>
             <Grid item xs={12}>
                 <Grid item container spacing={2}>
                     {positions.map((position) =>
