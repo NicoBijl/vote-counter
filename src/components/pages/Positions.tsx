@@ -4,7 +4,7 @@ import {Alert, Button, Stack, TextField} from "@mui/material";
 import Divider from "@mui/material/Divider";
 import AddIcon from '@mui/icons-material/Add';
 import Paper from "@mui/material/Paper";
-import {PositionKey} from "../../types.ts";
+import {PersonKey, PositionKey} from "../../types.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 
 
@@ -13,11 +13,11 @@ export function Positions() {
 
 
     function savePersonKey(positionKey: PositionKey, personKey: PersonKey, newName: string) {
-
+        console.log('savePersonKey', positionKey, personKey, newName)
     }
 
     function savePersonName(positionKey: PositionKey, personKey: PersonKey, newName: string) {
-
+        console.log('savePersonName', positionKey, personKey, newName)
     }
 
     return (

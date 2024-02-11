@@ -88,7 +88,7 @@ export function Results() {
                                 <Divider variant={"middle"} ></Divider>
                                 <List>
                                     <ListItem disableGutters>
-                                        <Chip label={countVoted(position.key, "invalid")} variant="outlined"
+                                        <Chip label={countVoted(position.key, "inva stringlid")} variant="outlined"
                                               sx={{mr: 2}}/>
                                         Invalid
                                     </ListItem>
