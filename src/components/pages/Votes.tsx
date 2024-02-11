@@ -31,8 +31,8 @@ export function Votes() {
     function maxReached(positionKey: PositionKey): boolean {
         console.log("currentBallotIndex", currentBallotIndex)
         console.log("currentVote", currentVote)
-        console.log("currentVote.vote", currentVote.vote)
-        return currentVote.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
+        console.log("currentVote.vote", currentVote!.vote)
+        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
     }
 
     return <>

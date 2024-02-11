@@ -7,7 +7,6 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
 import {useRef, useState} from "react";
 import {isPosition, Position} from "../../types.ts";
-import Paper from "@mui/material/Paper";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 
@@ -46,7 +45,7 @@ export function Settings() {
         console.log("file ", importPositionsFile?.current)
         importPositionsFile.current?.click()
     }
-    const onPositionsFileChange = (e) => {
+    const onPositionsFileChange = (e: any) => {
         const fileReader = new FileReader()
         fileReader.readAsText(e.target.files[0], "UTF-8")
         fileReader.onload = e => {
