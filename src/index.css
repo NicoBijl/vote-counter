@@ -1,0 +1,4 @@
+.focus {
+    outline: red 1px dotted;
+    background: lightgray;
+}

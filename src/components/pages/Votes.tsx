@@ -1,6 +1,6 @@
 import {Button, Checkbox, FormControlLabel, Pagination} from "@mui/material";
-import {PersonKey, PositionKey} from "../../types.ts";
-import {ChangeEvent} from "react";
+import {Person, PersonKey, Position, PositionKey} from "../../types.ts";
+import {ChangeEvent, MutableRefObject, useEffect, useRef, useState} from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -9,14 +9,52 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import Paper from "@mui/material/Paper";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
+import {useHotkeys} from "react-hotkeys-hook";
 
 export function Votes() {
     const {ballots, currentBallotIndex, nextVote, previousVote, setVoteIndex, setBallotVote} = useBallotStore()
     const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex))
     const {positions} = usePositionsStore()
+    const [focusPosition, setFocusPosition] = useState<Position | null>(null)
+    const [focusPerson, setFocusPerson] = useState<Person | null>(null)
+    let tabIndex = 1000
 
-    function togglePerson(position: PositionKey, person: PersonKey, checked: boolean) {
-        console.log("Toggle", position, person, currentVote)
+
+    const positionsRefs = []
+    for (const position of positions) {
+        positionsRefs[position.key] = useRef();
+        useHotkeys(position.title[0], () => changePositionFocus(position), {enableOnFormTags: true})
+    }
+    // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
+    for (let i = 1; i <= 9; i++) {
+        useHotkeys(`${i}`, () => {
+                console.log("focused Position: ", focusPosition, i)
+                toggleChecked(focusPosition!, focusPosition!.persons[i - 1].key);
+            }, {enableOnFormTags: true}
+        )
+    }
+    // invalid
+    useHotkeys("i", () => {
+            toggleChecked(focusPosition!, "invalid");
+        }, {enableOnFormTags: true}
+    )
+    useHotkeys("ArrowRight", nextVote, {enableOnFormTags: true})
+    useHotkeys("ArrowLeft", previousVote, {enableOnFormTags: true})
+
+    function changePositionFocus(position: Position) {
+        console.log('change focus to position with key: ', position.key)
+        setFocusPosition(position)
+    }
+
+    function toggleChecked(position: Position, personKey: PersonKey) {
+        console.log("Toggle", position, personKey, currentVote)
+        if (personKey == "invalid" || isChecked(position.key, personKey) || !maxReached(position.key)) {
+            setBallotVote(currentBallotIndex, position.key, personKey, !isChecked(position.key, personKey))
+        }
+    }
+
+    function setChecked(position: PositionKey, person: PersonKey, checked: boolean) {
+        console.log("Toggle to", position, person, currentVote, checked)
         setBallotVote(currentBallotIndex, position, person, checked)
     }
 
@@ -29,18 +67,27 @@ export function Votes() {
     }
 
     function maxReached(positionKey: PositionKey): boolean {
-        console.log("currentBallotIndex", currentBallotIndex)
-        console.log("currentVote", currentVote)
-        console.log("currentVote.vote", currentVote!.vote)
         return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
     }
 
+    function getNextPositionTabIndex() {
+        tabIndex = (Math.floor(tabIndex / 100) * 100) + 100
+        return tabIndex;
+    }
+
+    function getNextPersonTabIndex() {
+        tabIndex = tabIndex + 1
+        return tabIndex;
+    }
+
+
     return <>
-        <Paper sx={{p: 1}}>
+        <Paper sx={{p: 1}} className={"vote"}>
             <Grid container spacing={1} alignItems={"stretch"}>
                 <Grid item md sm={12}>
                     <Button variant="outlined" sx={{height: '100%', width: '100%'}}
                             aria-label="previous vote"
+                            tabIndex={500}
                             disabled={currentBallotIndex == 0}
                             onClick={previousVote}>
                         <KeyboardArrowLeftIcon/>
@@ -55,7 +102,11 @@ export function Votes() {
 
 
                         {positions.map((position) =>
-                            <Grid item xs={6} sm={4} key={position.key} marginBottom={2} marginTop={2}>
+                            <Grid item xs={6} sm={4} key={position.key} marginBottom={2} marginTop={2}
+                                  tabIndex={getNextPositionTabIndex()}
+                                  className={focusPosition == position ? "focus" : ""}
+                                  ref={positionsRefs[position.key]}
+                            >
                                 <Typography variant="h4">{position.title}</Typography>
                                 <Typography variant="subtitle2">Max: {position.max}</Typography>
                                 {position.persons.map((person) => (
@@ -63,7 +114,8 @@ export function Votes() {
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    onChange={(_event, checked) => togglePerson(position.key, person.key, checked)}
+                                                    tabIndex={getNextPersonTabIndex()}
+                                                    onChange={(_event, checked) => setChecked(position.key, person.key, checked)}
                                                     checked={isChecked(position.key, person.key)}
                                                     disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
                                                 />
@@ -75,7 +127,8 @@ export function Votes() {
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                onChange={(_event, checked) => togglePerson(position.key, "invalid", checked)}
+                                                tabIndex={getNextPersonTabIndex()}
+                                                onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
                                                 checked={isChecked(position.key, "invalid")}
                                             />
                                         }
@@ -84,14 +137,17 @@ export function Votes() {
                             </Grid>
                         )}
                         <Grid item xs={12}>
-                            <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}>
+                            <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
+                                    tabIndex={2000}
+                            >
                                 Next Vote
                             </Button>
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid item md sm={12}>
-                    <Button variant="outlined" sx={{height: '100%', width: '100%'}} aria-label="next vote"
+                    <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
+                            aria-label="next vote"
                             onClick={nextVote}
                             disabled={currentBallotIndex == ballots.length - 1}>
                         <KeyboardArrowRightIcon/>
@@ -110,15 +166,6 @@ export function Votes() {
                     />
                 </Grid>
             </Grid>
-
-
-            {/*<ul>*/}
-            {/*    {currentVote?.vote.map((vote, index) => (*/}
-            {/*        <li key={"vote-" + index}>*/}
-            {/*            vote : {vote.position} / {vote.person}*/}
-            {/*        </li>*/}
-            {/*    ))}*/}
-            {/*</ul>*/}
         </Paper>
     </>;
 }

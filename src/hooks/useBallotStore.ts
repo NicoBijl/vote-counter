@@ -32,7 +32,7 @@ export const useBallotStore = create<BallotState>()(persist(
         return ({
             ...DEFAULT,
             addVotes: (newVote) => set((state) => ({ballots: state.ballots.concat([newVote])})),
-            removeAllBallots: () => set(()=> ({ballots: [createNewBallot(0)], currentBallotIndex: 0})),
+            removeAllBallots: () => set(() => ({ballots: [createNewBallot(0)], currentBallotIndex: 0})),
             setVoteIndex: (newBallotIndex) => set(() => {
                 console.log("setVoteIndex", newBallotIndex)
                 return ({currentBallotIndex: newBallotIndex});
@@ -41,7 +41,7 @@ export const useBallotStore = create<BallotState>()(persist(
                 return ({ballots: state.ballots.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
             }),
             setBallotVote: (index, position, person, checked) => set((state) => {
-                console.log("setBallotVote", index, position, person, checked)
+                // console.log("setBallotVote", index, position, person, checked)
 
                 const updatedBallot = state.ballots.find(b => b.index == index) ?? createNewBallot(index);
                 if (person == "invalid" && checked) {
@@ -83,7 +83,7 @@ export const useBallotStore = create<BallotState>()(persist(
                 console.log("nextVote", newBallotIndex)
                 return ({currentBallotIndex: newBallotIndex, ballots: updatedBallots});
             }),
-            previousVote: () => set((state) => ({currentBallotIndex: state.currentBallotIndex - 1}))
+            previousVote: () => set((state) => ({currentBallotIndex: Math.max(state.currentBallotIndex - 1, 0)}))
         });
     },
     {
