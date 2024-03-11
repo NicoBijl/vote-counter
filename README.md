@@ -53,8 +53,6 @@ For any questions or technical support, please create a GitHub issue in our repo
 
 ## Todo:
 
-- Complete the README with detailed instructions and information.
-- add a license
 - Add a help section and shortcuts overview.
 - add the total number of allowed voters to calculated a attendance ratio.
 - Implement a feature to sort candidates by vote count in the results component.
@@ -62,3 +60,4 @@ For any questions or technical support, please create a GitHub issue in our repo
 - Create comprehensive documentation for the dashboard to assist users.
 - Set up Continuous Integration/Continuous Deployment (CI/CD) for efficient development and deployment.
 - Add functionality to synchronize results across devices and verify consistency of ballots and vote counts.
+- add open commit to rewrite commit message on feature branches. https://github.com/marketplace/actions/opencommit-improve-commits-with-ai
