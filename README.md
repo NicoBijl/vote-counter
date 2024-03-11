@@ -5,6 +5,22 @@ simplify the process of counting votes in elections. This application is tailore
 an efficient method to tally votes, manage positions, and display election results. With a focus on accuracy and ease of
 use, the Vote Counter App offers a comprehensive solution for managing and understanding electoral outcomes.
 
+## Usage
+
+The Vote Counter App is accessible online at [https://vote.bijlit.nl/](https://vote.bijlit.nl/). To use the app, simply visit the URL in any modern web browser.
+
+### Getting Started
+
+1. **Open the Web App**: Navigate to [https://vote.bijlit.nl/](https://vote.bijlit.nl/) to start the voting process or to view election results.
+2. **Navigate the App**: Use the menu or the intuitive user interface to move between different sections of the app, such as voting, viewing candidates, or checking election results.
+3. **Vote**: If participating in an election, select your candidates of choice according to the instructions provided within the app. Your selections will be securely submitted for counting.
+4. **Results**: Access the results page to see updated counts for each candidate and position. This page also shows information on blank and invalid votes, and highlights candidates who have surpassed the electoral divisor.
+
+The Vote Counter App offers a streamlined experience for managing and participating in elections, providing clear, concise, and immediate insights into electoral outcomes.
+
+For any questions or technical support, please create a GitHub issue in our repository. This allows us to track and address your concerns as efficiently as possible.
+
+
 ## Domain Language:
 
 - **Voters**: Individuals who participate in the voting process to select candidates for various positions.
@@ -38,6 +54,8 @@ use, the Vote Counter App offers a comprehensive solution for managing and under
 ## Todo:
 
 - Complete the README with detailed instructions and information.
+- add a license
+- Add a help section and shortcuts overview.
 - add the total number of allowed voters to calculated a attendance ratio.
 - Implement a feature to sort candidates by vote count in the results component.
 - Develop a positions editor for easy management of election positions.
