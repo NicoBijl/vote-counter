@@ -5,14 +5,20 @@ on:
   pull_request:
 
 jobs:
-  test:
+  scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Secret Scanning
+      - name: Secret Scanning Changes
         uses: trufflesecurity/trufflehog@main
         with:
+          extra_args: --only-verified
+      - name: Secret Scanning Everything
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ""
+          head: ${{ github.ref_name }}
           extra_args: --only-verified
