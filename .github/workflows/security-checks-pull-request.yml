@@ -1,4 +1,4 @@
-name: Security checks on PR and push to main
+name: Security checks on PR
 
 on:
   pull_request:
