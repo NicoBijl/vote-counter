@@ -3,7 +3,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import HouseIcon from '@mui/icons-material/House';
 import BallotIcon from '@mui/icons-material/Ballot';
-import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SettingsIcon from '@mui/icons-material/Settings';
 
@@ -15,7 +14,7 @@ export default function NavItems({onClick}: NavItemsProps) {
     return (
 
         <>
-            <ListItemButton  onClick={() => onClick('dashboard')}>
+            <ListItemButton onClick={() => onClick('dashboard')}>
                 <ListItemIcon>
                     <HouseIcon/>
                 </ListItemIcon>
@@ -27,12 +26,12 @@ export default function NavItems({onClick}: NavItemsProps) {
                 </ListItemIcon>
                 <ListItemText primary="Results"/>
             </ListItemButton>
-            <ListItemButton onClick={() => onClick('positions')}>
-                <ListItemIcon>
-                    <PeopleIcon/>
-                </ListItemIcon>
-                <ListItemText primary="Positions"/>
-            </ListItemButton>
+            {/*<ListItemButton onClick={() => onClick('positions')}>*/}
+            {/*    <ListItemIcon>*/}
+            {/*        <PeopleIcon/>*/}
+            {/*    </ListItemIcon>*/}
+            {/*    <ListItemText primary="Positions"/>*/}
+            {/*</ListItemButton>*/}
             <ListItemButton onClick={() => onClick('votes')}>
                 <ListItemIcon>
                     <BallotIcon/>
