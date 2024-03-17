@@ -53,6 +53,8 @@ For any questions or technical support, please create a GitHub issue in our repo
 
 ## Todo:
 
+- Results: add total number of ballots.
+- Results: add allowed number of votes, add number of valid votes.
 - Add a help section and shortcuts overview.
 - add the total number of allowed voters to calculated a attendance ratio.
 - Implement a feature to sort candidates by vote count in the results component.
