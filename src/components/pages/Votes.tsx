@@ -1,7 +1,6 @@
-import {Button, Checkbox, FormControlLabel, Pagination} from "@mui/material";
+import {Button, Checkbox, Chip, FormControlLabel, Pagination} from "@mui/material";
 import {PersonKey, Position, PositionKey} from "../../types.ts";
-import {ChangeEvent, useRef, useState} from "react";
-import Box from "@mui/material/Box";
+import {ChangeEvent, useEffect, useRef, useState} from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -31,9 +30,19 @@ export function BallotPosition({
                                    maxReached
                                }: BallotPositionProps) {
     let tabIndex = positionTabIndex
-    const positionRef = useRef(null)
+    const positionRef = useRef<HTMLInputElement | null>(null);
 
     useHotkeys(position.title[0], () => changePositionFocus(position), {enableOnFormTags: true})
+
+    useEffect(() => {
+        if (focussed) {
+            positionRef.current?.focus();
+        }
+    }, [focussed]);
+
+    function onFocusPosition() {
+        setFocusPosition(position);
+    }
 
     function getNextPersonTabIndex() {
         tabIndex = tabIndex + 1
@@ -43,18 +52,31 @@ export function BallotPosition({
     function changePositionFocus(position: Position) {
         console.log('change focus to position with key: ', position.key)
         setFocusPosition(position)
+        positionRef.current?.focus();
     }
 
     return <>
-        <Grid item xs={6} sm={4} marginBottom={2} marginTop={2}
+        <Grid item xs={6} sm={3} marginBottom={2} marginTop={2}
               tabIndex={tabIndex}
+              onFocus={onFocusPosition}
               className={focussed ? "focus" : ""}
               ref={positionRef}
+              sx={{padding: ".6rem", borderRadius: ".3rem"}}
         >
-            <Typography variant="h4">{position.title}</Typography>
+            <Grid justifyContent="space-between" alignItems="center" container>
+                <Grid item xs><Typography variant="h4">
+                    {position.title}
+                </Typography></Grid>
+                <Grid item xs={"auto"}>
+                    <Chip label={position.title[0].toLowerCase()} variant="outlined"/>
+                </Grid>
+
+            </Grid>
             <Typography variant="subtitle2">Max: {position.max}</Typography>
-            {position.persons.map((person) => (
-                <Box key={person.key}>
+
+
+            {position.persons.map((person, personIndex) => (
+                <Grid justifyContent="space-between" alignItems="center" container key={person.key}>
                     <FormControlLabel
                         control={
                             <Checkbox
@@ -65,9 +87,12 @@ export function BallotPosition({
                             />
                         }
                         label={person.name}/>
-                </Box>
+                    {focussed &&
+                        <Chip label={personIndex + 1} variant="outlined"/>
+                    }
+                </Grid>
             ))}
-            <Box>
+            <Grid justifyContent="space-between" alignItems="center" container>
                 <FormControlLabel
                     control={
                         <Checkbox
@@ -77,7 +102,10 @@ export function BallotPosition({
                         />
                     }
                     label="Invalid"/>
-            </Box>
+                {focussed &&
+                    <Chip label={'i'} variant="outlined"/>
+                }
+            </Grid>
         </Grid>
     </>;
 }
@@ -88,6 +116,11 @@ export function Votes() {
     const {positions} = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     let tabIndex = 1000
+
+    useEffect(() => {
+        console.log("currentBallotIndex updated")
+        setFocusPosition(positions[0]);
+    }, [currentBallotIndex]);
 
 
     // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
@@ -141,7 +174,7 @@ export function Votes() {
     return <>
         <Paper sx={{p: 1}} className={"vote"}>
             <Grid container spacing={1} alignItems={"stretch"}>
-                <Grid item md sm={12}>
+                <Grid item xs="auto" sx={{minWidth: "75px", maxWidth: "150px"}}>
                     <Button variant="outlined" sx={{height: '100%', width: '100%'}}
                             aria-label="previous vote"
                             tabIndex={500}
@@ -150,7 +183,7 @@ export function Votes() {
                         <KeyboardArrowLeftIcon/>
                     </Button>
                 </Grid>
-                <Grid item xs={10}>
+                <Grid item xs>
                     <Grid item container>
                         <Grid item xs={12}>
                             <Typography variant="h2" sx={{textAlign: "center"}}>Vote:
@@ -171,7 +204,7 @@ export function Votes() {
                                             maxReached={maxReached}
                             ></BallotPosition>
                         )}
-                        <Grid item xs={12}>
+                        <Grid item container xs={12} justifyContent="space-evenly">
                             <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
                                     tabIndex={2000}
                             >
@@ -180,7 +213,7 @@ export function Votes() {
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item md sm={12}>
+                <Grid item xs="auto" sx={{minWidth: "75px", maxWidth: "150px"}}>
                     <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
                             aria-label="next vote"
                             onClick={nextVote}
