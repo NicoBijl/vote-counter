@@ -68,7 +68,7 @@ export function Results() {
                 <Grid container>
                     <Grid item container>
                         {positions.map((position) => (
-                            <Grid item xs={6} sm={4} key={"votes-" + position.key}>
+                            <Grid item xs={6} sm={3} key={"votes-" + position.key}>
                                 <Typography variant="h4">{position.title}</Typography>
                                 <Typography variant="subtitle2">Max: {position.max}</Typography>
                                 <List>
@@ -84,7 +84,7 @@ export function Results() {
                         ))}
 
                         {positions.map((position) => (
-                            <Grid item xs={6} sm={4} key={"rest-" + position.key}>
+                            <Grid item xs={6} sm={3} key={"rest-" + position.key}>
                                 <Divider variant={"middle"} ></Divider>
                                 <List>
                                     <ListItem disableGutters>
