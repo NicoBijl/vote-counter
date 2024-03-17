@@ -67,45 +67,51 @@ export function Results() {
             <Paper sx={{p: 2}}>
                 <Grid container>
                     <Grid item container>
-                        {positions.map((position) => (
-                            <Grid item xs={6} sm={3} key={"votes-" + position.key}>
-                                <Typography variant="h4">{position.title}</Typography>
-                                <Typography variant="subtitle2">Max: {position.max}</Typography>
-                                <List>
-                                    {position.persons.sort((p1, p2) => countVoted(position.key, p2.key) - countVoted(position.key, p1.key)).map((person) => (
-                                        <ListItem disableGutters key={person.key}>
-                                            <Chip label={countVoted(position.key, person.key)} variant="filled"
-                                                  color={chipColor(position.key, person.key)} sx={{mr: 2}}/>
-                                            <ListItemText>{person.name}</ListItemText>
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            </Grid>
-                        ))}
+                        <Grid item container>
 
-                        {positions.map((position) => (
-                            <Grid item xs={6} sm={3} key={"rest-" + position.key}>
-                                <Divider variant={"middle"} ></Divider>
-                                <List>
-                                    <ListItem disableGutters>
-                                        <Chip label={countVoted(position.key, "inva stringlid")} variant="outlined"
-                                              sx={{mr: 2}}/>
-                                        Invalid
-                                    </ListItem>
-                                    <ListItem disableGutters>
-                                        <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
-                                        Blank
-                                    </ListItem>
-                                    <Tooltip title={calcElectoralDivisor(position.key)} arrow placement="bottom-start">
+                            {positions.map((position) => (
+                                <Grid item xs={6} sm={3} key={"votes-" + position.key}>
+                                    <Typography variant="h4">{position.title}</Typography>
+                                    <Typography variant="subtitle2">Max: {position.max}</Typography>
+                                    <List>
+                                        {position.persons.sort((p1, p2) => countVoted(position.key, p2.key) - countVoted(position.key, p1.key)).map((person) => (
+                                            <ListItem disableGutters key={person.key}>
+                                                <Chip label={countVoted(position.key, person.key)} variant="filled"
+                                                      color={chipColor(position.key, person.key)} sx={{mr: 2}}/>
+                                                <ListItemText>{person.name}</ListItemText>
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </Grid>
+                            ))}
+                        </Grid>
+                        <Grid item container>
+
+                            {positions.map((position) => (
+                                <Grid item xs={6} sm={3} key={"rest-" + position.key}>
+                                    <Divider variant={"middle"}></Divider>
+                                    <List>
                                         <ListItem disableGutters>
-                                            <Chip label={electoralDivisor(position.key)} variant="outlined"
+                                            <Chip label={countVoted(position.key, "inva stringlid")} variant="outlined"
                                                   sx={{mr: 2}}/>
-                                            <span>Electoral Divisor</span>
+                                            Invalid
                                         </ListItem>
-                                    </Tooltip>
-                                </List>
-                            </Grid>
-                        ))}
+                                        <ListItem disableGutters>
+                                            <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
+                                            Blank
+                                        </ListItem>
+                                        <Tooltip title={calcElectoralDivisor(position.key)} arrow
+                                                 placement="bottom-start">
+                                            <ListItem disableGutters>
+                                                <Chip label={electoralDivisor(position.key)} variant="outlined"
+                                                      sx={{mr: 2}}/>
+                                                <span>Electoral Divisor</span>
+                                            </ListItem>
+                                        </Tooltip>
+                                    </List>
+                                </Grid>
+                            ))}
+                        </Grid>
                     </Grid>
                 </Grid>
             </Paper>
