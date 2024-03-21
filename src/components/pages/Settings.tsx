@@ -1,5 +1,5 @@
 import Typography from "@mui/material/Typography";
-import {Alert, Button, Card, Snackbar, Stack, TextField} from "@mui/material";
+import {Alert, Button, Card, FormControlLabel, Snackbar, Stack, Switch, TextField} from "@mui/material";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import DownloadIcon from '@mui/icons-material/Download';
@@ -13,7 +13,12 @@ import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 export function Settings() {
     const {positions, setPositions} = usePositionsStore()
     const {ballots, removeAllBallots} = useBallotStore()
-    const {electoralDivisorVariable, setElectoralDivisorVariable} = useSettingsStore()
+    const {
+        electoralDivisorVariable,
+        setElectoralDivisorVariable,
+        sortResultsByVoteCount,
+        setSortResultsByVoteCount
+    } = useSettingsStore()
     const importVotesFile = useRef<HTMLInputElement | null>(null);
     const importPositionsFile = useRef<HTMLInputElement | null>(null);
     const [importPositionsConfirmDialogOpen, setDialogOpen] = useState(false)
@@ -110,6 +115,16 @@ export function Settings() {
                 <Card sx={{p: 2}}>
                     <Stack spacing={2}>
                         <Typography variant={"h4"}>Results</Typography>
+
+                        <FormControlLabel control={
+                            <Switch defaultChecked={sortResultsByVoteCount}
+                                    onChange={
+                                        (_, checked) => {
+                                            setSortResultsByVoteCount(checked)
+                                        }
+                                    }/>
+                        } label="Sort results by vote count"/>
+
 
                         <TextField inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
                                    label="Electoral Divisor"
