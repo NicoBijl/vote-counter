@@ -5,7 +5,8 @@ import {persist} from "zustand/middleware";
 interface BallotState {
     ballots: Array<Ballot>
     currentBallotIndex: number
-    addVotes: (newVote: Ballot) => void
+    addBallot: (newBallot: Ballot) => void
+    removeBallot: (ballot: Ballot) => void
     removeAllBallots: () => void
     nextVote: () => void
     previousVote: () => void
@@ -31,7 +32,22 @@ export const useBallotStore = create<BallotState>()(persist(
         }
         return ({
             ...DEFAULT,
-            addVotes: (newVote) => set((state) => ({ballots: state.ballots.concat([newVote])})),
+            addBallot: (newBallot) => set((state) => ({ballots: state.ballots.concat([newBallot])})),
+            removeBallot: (ballot) => set((state) => {
+                if (state.ballots.length == 1) {
+                    return ({}) // disable removal of the first vote.
+                }
+                // remove ballot from array, recalculate indexes, and update currentBallotIndex only if the last ballot was removed.
+                let index = 0;
+                return ({
+                    ballots: state.ballots.filter(b => b.index != ballot.index).map(b => {
+                        b.index = index;
+                        index++
+                        return b
+                    }),
+                    currentBallotIndex: Math.max(ballot.index == state.currentBallotIndex ? state.currentBallotIndex - 1 : state.currentBallotIndex, 0)
+                });
+            }),
             removeAllBallots: () => set(() => ({ballots: [createNewBallot(0)], currentBallotIndex: 0})),
             setVoteIndex: (newBallotIndex) => set(() => {
                 console.log("setVoteIndex", newBallotIndex)
