@@ -118,7 +118,7 @@ export function BallotPosition({
                 <Grid item xs={"auto"}>
                     <FormControlLabel
                         control={
-                            <Checkbox
+                            <Checkbox color={"error"}
                                 tabIndex={getNextPersonTabIndex()}
                                 onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
                                 checked={isChecked(position.key, "invalid")}
