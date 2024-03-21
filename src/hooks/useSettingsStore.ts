@@ -5,7 +5,9 @@ export const useSettingsStore = create<SettingsStore>()(persist(
     (set) => {
         return ({
             electoralDivisorVariable: 0.8,
-            setElectoralDivisorVariable: (newValue) => set({electoralDivisorVariable: newValue})
+            setElectoralDivisorVariable: (newValue) => set({electoralDivisorVariable: newValue}),
+            sortResultsByVoteCount: false,
+            setSortResultsByVoteCount: (newValue) => set({sortResultsByVoteCount: newValue})
         })
     },
     {
@@ -16,4 +18,6 @@ export const useSettingsStore = create<SettingsStore>()(persist(
 interface SettingsStore {
     electoralDivisorVariable: number
     setElectoralDivisorVariable: (newValue: number) => void
+    sortResultsByVoteCount: boolean
+    setSortResultsByVoteCount: (newValue: boolean) => void
 }
