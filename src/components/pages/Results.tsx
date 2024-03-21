@@ -52,14 +52,14 @@ export function Results() {
         return checksum(votesPerPerson);
     }
 
-
-    function totalChecksumByPositions(){
+    function totalChecksumByPositions() {
         const positionKeys = positions.map(position => position.key);
         const positionChecksums = positionKeys.map(positionKey => {
             return positionChecksum(positionKey)
         });
         return checksum(positionChecksums);
     }
+
     function totalChecksum() {
         const positionKeys = positions.map(position => position.key);
         const allVotesCounted = countVotesForPositions(positionKeys);
@@ -109,7 +109,7 @@ export function Results() {
                                     <Typography variant="subtitle2">Max: {position.max}</Typography>
                                     <List>
                                         {position.persons.sort((p1, p2) => {
-                                            if(!sortResultsByVoteCount){
+                                            if (!sortResultsByVoteCount) {
                                                 return 0;
                                             }
                                             return countVotes(position.key, p2.key) - countVotes(position.key, p1.key);
@@ -138,6 +138,11 @@ export function Results() {
                                             <Chip label={blankVotes(position.key)} variant="outlined" sx={{mr: 2}}/>
                                             Blank
                                         </ListItem>
+                                        <ListItem disableGutters>
+                                            <Chip label={ballots.length * position.max} variant="outlined"
+                                                  sx={{mr: 2}}/>
+                                            Allowed Votes
+                                        </ListItem>
                                         <Tooltip title={calcElectoralDivisor(position.key)} arrow
                                                  placement="bottom-start">
                                             <ListItem disableGutters>
@@ -162,6 +167,10 @@ export function Results() {
                         </Grid>
                         <Grid item container sx={{pt: 4}}>
                             <List>
+                                <ListItem>
+                                    <Chip label={ballots.length} variant="outlined" sx={{mr: 2}}/>
+                                    Total Ballots
+                                </ListItem>
                                 <ListItem>
                                     <Chip label={totalChecksumByPositions()} variant="outlined" sx={{mr: 2}}/>
                                     Total checksum (by positions)
