@@ -1,4 +1,15 @@
-import {Button, Checkbox, Chip, FormControlLabel, Pagination} from "@mui/material";
+import {
+    Button,
+    Checkbox,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    FormControlLabel,
+    Pagination
+} from "@mui/material";
 import {PersonKey, Position, PositionKey} from "../../types.ts";
 import {ChangeEvent, useEffect, useRef, useState} from "react";
 import Typography from "@mui/material/Typography";
@@ -63,59 +74,92 @@ export function BallotPosition({
               ref={positionRef}
               sx={{padding: ".6rem", borderRadius: ".3rem"}}
         >
-            <Grid justifyContent="space-between" alignItems="center" container>
+            <Grid alignItems="center" container>
+                <Grid item xs={2}>
+                    <Chip label={position.title[0].toLowerCase()} variant="outlined"/>
+                </Grid>
                 <Grid item xs><Typography variant="h4">
                     {position.title}
                 </Typography></Grid>
-                <Grid item xs={"auto"}>
-                    <Chip label={position.title[0].toLowerCase()} variant="outlined"/>
-                </Grid>
-
             </Grid>
-            <Typography variant="subtitle2">Max: {position.max}</Typography>
-
+            <Grid alignItems="center" container>
+                <Grid item xs={2}></Grid>
+                <Grid item xs={"auto"}>
+                    <Typography variant="subtitle2">Max: {position.max}</Typography>
+                </Grid>
+            </Grid>
 
             {position.persons.map((person, personIndex) => (
-                <Grid justifyContent="space-between" alignItems="center" container key={person.key}>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                tabIndex={getNextPersonTabIndex()}
-                                onChange={(_event, checked) => setChecked(position.key, person.key, checked)}
-                                checked={isChecked(position.key, person.key)}
-                                disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
-                            />
+                <Grid container key={person.key}>
+                    <Grid item xs={2}>
+                        {focussed &&
+                            <Chip label={personIndex + 1} variant="outlined"/>
                         }
-                        label={person.name}/>
-                    {focussed &&
-                        <Chip label={personIndex + 1} variant="outlined"/>
-                    }
+                    </Grid>
+                    <Grid item xs={"auto"}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    tabIndex={getNextPersonTabIndex()}
+                                    onChange={(_event, checked) => setChecked(position.key, person.key, checked)}
+                                    checked={isChecked(position.key, person.key)}
+                                    disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
+                                />
+                            }
+                            label={person.name}/>
+                    </Grid>
                 </Grid>
             ))}
-            <Grid justifyContent="space-between" alignItems="center" container>
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            tabIndex={getNextPersonTabIndex()}
-                            onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
-                            checked={isChecked(position.key, "invalid")}
-                        />
-                    }
-                    label="Invalid"/>
-                {focussed &&
-                    <Chip label={'i'} variant="outlined"/>
-                }
+            <Grid container>
+                <Grid item xs={2}>
+                    {focussed &&
+                        <Chip label={'i'} variant="outlined"/>
+                    }</Grid>
+                <Grid item xs={"auto"}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox color={"error"}
+                                tabIndex={getNextPersonTabIndex()}
+                                onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
+                                checked={isChecked(position.key, "invalid")}
+                            />
+                        }
+                        label="Invalid"/>
+                </Grid>
             </Grid>
         </Grid>
     </>;
 }
 
 export function Votes() {
-    const {ballots, currentBallotIndex, nextVote, previousVote, setVoteIndex, setBallotVote} = useBallotStore()
+    const {
+        ballots,
+        currentBallotIndex,
+        removeBallot,
+        nextVote,
+        previousVote,
+        setVoteIndex,
+        setBallotVote
+    } = useBallotStore()
     const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex))
     const {positions} = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
     let tabIndex = 1000
+
+    function focusPreviousPosition() {
+        if (focusPosition) {
+            const updatedIndex = Math.max(positions.indexOf(focusPosition) - 1, 0)
+            setFocusPosition(positions[updatedIndex]);
+        }
+    }
+
+    function focusNextPosition() {
+        if (focusPosition) {
+            const updatedIndex = Math.min(positions.indexOf(focusPosition) + 1, positions.length - 1)
+            setFocusPosition(positions[updatedIndex]);
+        }
+    }
 
     useEffect(() => {
         console.log("currentBallotIndex updated")
@@ -137,10 +181,23 @@ export function Votes() {
             toggleChecked(focusPosition!, "invalid");
         }, {enableOnFormTags: true}
     )
-    useHotkeys("Enter", nextVote, {enableOnFormTags: true})
-    useHotkeys("ArrowRight", nextVote, {enableOnFormTags: true})
-    useHotkeys("ArrowLeft", previousVote, {enableOnFormTags: true})
-    useHotkeys("Backspace", previousVote, {enableOnFormTags: true})
+    useHotkeys("Enter", () => {
+        if (isDialogOpen) {
+            remove()
+        } else {
+            nextVote()
+        }
+    }, {enableOnFormTags: true})
+
+    useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
+    useHotkeys("ArrowDown", () => {
+        if (currentBallotIndex !== ballots.length - 1) {
+            nextVote()
+        }
+    }, {enableOnFormTags: true})
+    useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
+    useHotkeys("ArrowRight", focusNextPosition, {enableOnFormTags: true})
+    useHotkeys("Backspace", openRemoveConfirmationDialog, {enableOnFormTags: true})
 
     function toggleChecked(position: Position, personKey: PersonKey) {
         console.log("Toggle", position, personKey, currentVote)
@@ -171,10 +228,45 @@ export function Votes() {
         return tabIndex;
     }
 
+    function openRemoveConfirmationDialog() {
+        if (currentBallotIndex == 0) {
+            return // first ballot can't be removed
+        }
+        setIsDialogOpen(true);
+    }
+
+    function handleDialogClose() {
+        setIsDialogOpen(false)
+    }
+
+    function remove() {
+        removeBallot(currentVote!);
+        setIsDialogOpen(false)
+    }
+
     return <>
         <Paper sx={{p: 1}} className={"vote"}>
+            <Dialog
+                open={isDialogOpen}
+                onClose={handleDialogClose}
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {"Are you sure you want to remove this ballot?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Removing this ballot can't be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDialogClose}>Cancel</Button>
+                    <Button onClick={remove} color={"error"} autoFocus>
+                        Remove Ballot
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <Grid container spacing={1} alignItems={"stretch"}>
-                <Grid item xs="auto" sx={{minWidth: "75px", maxWidth: "150px"}}>
+                <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
                     <Button variant="outlined" sx={{height: '100%', width: '100%'}}
                             aria-label="previous vote"
                             tabIndex={500}
@@ -208,12 +300,21 @@ export function Votes() {
                             <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
                                     tabIndex={2000}
                             >
-                                Next Vote
+                                Next Ballot
                             </Button>
+                            <Button disabled={currentBallotIndex == 0}
+                                    onClick={openRemoveConfirmationDialog}
+                                    variant="outlined" color="error"
+                                    sx={{mt: 2, mb: 2}}
+                                    tabIndex={2000}
+                            >
+                                Remove Ballot
+                            </Button>
+
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item xs="auto" sx={{minWidth: "75px", maxWidth: "150px"}}>
+                <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
                     <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
                             aria-label="next vote"
                             onClick={nextVote}
