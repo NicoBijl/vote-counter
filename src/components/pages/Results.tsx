@@ -1,5 +1,5 @@
 import Grid from "@mui/material/Grid";
-import {PersonKey, PositionKey} from "../../types.ts";
+import {PersonKey, Position, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
 import {Alert, Chip, ListItem, Tooltip} from "@mui/material";
 import List from "@mui/material/List";
@@ -21,9 +21,9 @@ export function Results() {
         return array.reduce((acc, val, index) => acc + val * Math.pow(2, index), 0); // Adjust the modulo value as needed to control the checksum's size
     }
 
-    function calcElectoralDivisor(positionKey: PositionKey): string {
-        const persons = positions.find(p => p.key == positionKey)!.persons.length
-        const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == positionKey && v.person != "invalid").length
+    function calcElectoralDivisor(position: Position): string {
+        const persons = position.persons.length
+        const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person != "invalid").length
         return `Math.ceil(${validVotes} / ${persons} * ${electoralDivisorVariable})`
         // roundUp(validVotes / persons * ${electoralDivisorVariable})
         // (117+76+101+59 )/4*0.8 == 70.6 => 71
@@ -32,47 +32,46 @@ export function Results() {
         // (170+86)/2*.8 == 102.4 => 103
     }
 
-    function electoralDivisor(positionKey: PositionKey): number {
-        const persons = positions.find(p => p.key == positionKey)!.persons.length
-        const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == positionKey && v.person != "invalid").length
+    function electoralDivisor(position: Position): number {
+        const persons = position.persons.length
+        const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person != "invalid").length
         return Math.ceil(validVotes / persons * electoralDivisorVariable)
     }
 
-    function countVotesForPositions(positionKeys: PositionKey[]): number[] {
-        return positionKeys.flatMap(positionKey => {
-            const persons = positions.find(p => p.key == positionKey)?.persons ?? [];
-            const votesPerPerson = persons.map(person => countVotes(positionKey, person.key));
-            return votesPerPerson.concat([countVotes(positionKey, 'invalid')]);
+    function countVotesForPositions(positions: Position[]): number[] {
+        return positions.flatMap(position => {
+            const persons = position.persons ?? [];
+            const votesPerPerson = persons.map(person => countVotes(position, person.key));
+            return votesPerPerson.concat([countVotes(position, 'invalid')]);
         });
     }
 
-    function positionChecksum(positionKey: PositionKey) {
-        const votesPerPerson = countVotesForPositions([positionKey]);
+    function positionChecksum(position: Position) {
+        const votesPerPerson = countVotesForPositions([position]);
         console.log("positionChecksum", votesPerPerson, checksum(votesPerPerson));
         return checksum(votesPerPerson);
     }
 
     function totalChecksumByPositions() {
-        const positionKeys = positions.map(position => position.key);
-        const positionChecksums = positionKeys.map(positionKey => {
-            return positionChecksum(positionKey)
+        const positionChecksums = positions.map(position => {
+            return positionChecksum(position)
         });
         return checksum(positionChecksums);
     }
 
     function totalChecksum() {
-        const positionKeys = positions.map(position => position.key);
-        const allVotesCounted = countVotesForPositions(positionKeys);
+        const allVotesCounted = countVotesForPositions(positions);
         console.log("totalChecksum", allVotesCounted, checksum(allVotesCounted));
         return checksum(allVotesCounted);
     }
 
-    function countVotes(positionKey: PositionKey, personKey: PersonKey): number {
-        return ballots.flatMap(b => b.vote).filter(v => v.position == positionKey && v.person == personKey).length
+    function countVotes(position: Position, personKey: PersonKey): number {
+        const checked = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person == personKey).length
+        return personKey == 'invalid' ? checked * position.max : checked;
     }
 
-    function chipColor(positionKey: PositionKey, personKey: PersonKey) {
-        if (countVotes(positionKey, personKey) >= electoralDivisor(positionKey)) {
+    function chipColor(position: Position, personKey: PersonKey) {
+        if (countVotes(position, personKey) >= electoralDivisor(position)) {
             return 'success'
         } else {
             return 'default'
@@ -112,11 +111,11 @@ export function Results() {
                                             if (!sortResultsByVoteCount) {
                                                 return 0;
                                             }
-                                            return countVotes(position.key, p2.key) - countVotes(position.key, p1.key);
+                                            return countVotes(position, p2.key) - countVotes(position, p1.key);
                                         }).map((person) => (
                                             <ListItem disableGutters key={person.key}>
-                                                <Chip label={countVotes(position.key, person.key)} variant="filled"
-                                                      color={chipColor(position.key, person.key)} sx={{mr: 2}}/>
+                                                <Chip label={countVotes(position, person.key)} variant="filled"
+                                                      color={chipColor(position, person.key)} sx={{mr: 2}}/>
                                                 <ListItemText>{person.name}</ListItemText>
                                             </ListItem>
                                         ))}
@@ -130,7 +129,7 @@ export function Results() {
                                     <Divider variant={"middle"}></Divider>
                                     <List>
                                         <ListItem disableGutters>
-                                            <Chip label={countVotes(position.key, "invalid")} variant="outlined"
+                                            <Chip label={countVotes(position, "invalid")} variant="outlined"
                                                   sx={{mr: 2}}/>
                                             Invalid
                                         </ListItem>
@@ -143,21 +142,21 @@ export function Results() {
                                                   sx={{mr: 2}}/>
                                             Allowed Votes
                                         </ListItem>
-                                        <Tooltip title={calcElectoralDivisor(position.key)} arrow
+                                        <Tooltip title={calcElectoralDivisor(position)} arrow
                                                  placement="bottom-start">
                                             <ListItem disableGutters>
-                                                <Chip label={electoralDivisor(position.key)} variant="outlined"
+                                                <Chip label={electoralDivisor(position)} variant="outlined"
                                                       sx={{mr: 2}}/>
                                                 <span>Electoral Divisor</span>
                                             </ListItem>
                                         </Tooltip>
                                         <ListItem disableGutters>
-                                            <Chip label={positionChecksum(position.key)} variant="outlined"
+                                            <Chip label={positionChecksum(position)} variant="outlined"
                                                   sx={{mr: 2}}/>
                                             Checksum
                                         </ListItem>
                                         <ListItem disableGutters>
-                                            <Chip label={positionChecksum(position.key).toString(36)} variant="outlined"
+                                            <Chip label={positionChecksum(position).toString(36)} variant="outlined"
                                                   sx={{mr: 2}}/>
                                             Hash
                                         </ListItem>
@@ -172,7 +171,8 @@ export function Results() {
                                     Total Ballots
                                 </ListItem>
                                 <ListItem>
-                                    <Chip label={totalChecksumByPositions()} variant="outlined" sx={{mr: 2}}/>
+                                    <Chip label={totalChecksumByPositions()} variant="outlined" color={"info"}
+                                          sx={{mr: 2}}/>
                                     Total checksum (by positions)
                                 </ListItem>
                                 <ListItem>
