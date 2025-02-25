@@ -155,11 +155,6 @@ export function Results() {
                                                   sx={{mr: 2}}/>
                                             Checksum
                                         </ListItem>
-                                        <ListItem disableGutters>
-                                            <Chip label={positionChecksum(position).toString(36)} variant="outlined"
-                                                  sx={{mr: 2}}/>
-                                            Hash
-                                        </ListItem>
                                     </List>
                                 </Grid>
                             ))}
@@ -178,10 +173,6 @@ export function Results() {
                                 <ListItem>
                                     <Chip label={totalChecksum()} variant="outlined" sx={{mr: 2}}/>
                                     Total checksum
-                                </ListItem>
-                                <ListItem>
-                                    <Chip label={totalChecksum().toString(36)} variant="outlined" sx={{mr: 2}}/>
-                                    Hash
                                 </ListItem>
                             </List>
                         </Grid>
