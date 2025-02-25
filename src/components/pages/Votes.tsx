@@ -119,9 +119,9 @@ export function BallotPosition({
                     <FormControlLabel
                         control={
                             <Checkbox color={"error"}
-                                tabIndex={getNextPersonTabIndex()}
-                                onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
-                                checked={isChecked(position.key, "invalid")}
+                                      tabIndex={getNextPersonTabIndex()}
+                                      onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
+                                      checked={isChecked(position.key, "invalid")}
                             />
                         }
                         label="Invalid"/>
@@ -164,6 +164,7 @@ export function Votes() {
     useEffect(() => {
         console.log("currentBallotIndex updated")
         setFocusPosition(positions[0]);
+        setIsDialogOpen(false);
     }, [currentBallotIndex]);
 
 
@@ -181,12 +182,8 @@ export function Votes() {
             toggleChecked(focusPosition!, "invalid");
         }, {enableOnFormTags: true}
     )
-    useHotkeys("Enter", () => {
-        if (isDialogOpen) {
-            remove()
-        } else {
-            nextVote()
-        }
+    useHotkeys("n", () => {
+        nextVote()
     }, {enableOnFormTags: true})
 
     useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
@@ -198,6 +195,10 @@ export function Votes() {
     useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
     useHotkeys("ArrowRight", focusNextPosition, {enableOnFormTags: true})
     useHotkeys("Backspace", openRemoveConfirmationDialog, {enableOnFormTags: true})
+    useHotkeys("Escape", () => {
+            setIsDialogOpen(false);
+        }, {enableOnFormTags: true}
+    )
 
     function toggleChecked(position: Position, personKey: PersonKey) {
         console.log("Toggle", position, personKey, currentVote)
@@ -229,10 +230,14 @@ export function Votes() {
     }
 
     function openRemoveConfirmationDialog() {
-        if (currentBallotIndex == 0) {
-            return // first ballot can't be removed
+        if (isDialogOpen) {
+            remove();
+        } else {
+            if (currentBallotIndex == 0) {
+                return // first ballot can't be removed
+            }
+            setIsDialogOpen(true);
         }
-        setIsDialogOpen(true);
     }
 
     function handleDialogClose() {
