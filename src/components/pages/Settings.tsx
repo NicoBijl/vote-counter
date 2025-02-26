@@ -17,7 +17,9 @@ export function Settings() {
         electoralDivisorVariable,
         setElectoralDivisorVariable,
         sortResultsByVoteCount,
-        setSortResultsByVoteCount
+        setSortResultsByVoteCount,
+        totalAllowedVoters,
+        setTotalAllowedVoters
     } = useSettingsStore()
     const importVotesFile = useRef<HTMLInputElement | null>(null);
     const importPositionsFile = useRef<HTMLInputElement | null>(null);
@@ -50,7 +52,7 @@ export function Settings() {
         console.log("file ", importPositionsFile?.current)
         importPositionsFile.current?.click()
     }
-    const onPositionsFileChange = (e: any) => {
+    const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileReader = new FileReader()
         fileReader.readAsText(e.target.files[0], "UTF-8")
         fileReader.onload = e => {
@@ -137,6 +139,17 @@ export function Settings() {
                                        }
                                    }
                                    }/>
+
+                        <TextField
+                            inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
+                            label="Total Allowed Voters"
+                            defaultValue={totalAllowedVoters}
+                            onChange={(e) => {
+                                const value = Number(e.target.value) || 0;
+                                setTotalAllowedVoters(value);
+                            }}
+                            helperText="Set this to calculate attendance ratio"
+                        />
 
                         {/*    Add sort by vote count toggle */}
                     </Stack>
