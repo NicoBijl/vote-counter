@@ -13,7 +13,16 @@ import Divider from "@mui/material/Divider";
 export function Results() {
     const {positions} = usePositionsStore()
     const {ballots} = useBallotStore()
-    const {electoralDivisorVariable, sortResultsByVoteCount} = useSettingsStore()
+    const {electoralDivisorVariable, sortResultsByVoteCount, totalAllowedVoters} = useSettingsStore()
+
+    function calculateAttendanceRatio(): string {
+        if (totalAllowedVoters === 0) return "N/A";
+        return ((ballots.length / totalAllowedVoters) * 100).toFixed(1) + "%";
+    }
+
+    function calculateTotalValidVotes(): number {
+        return ballots.flatMap(b => b.vote).filter(v => v.person !== "invalid").length;
+    }
 
     function checksum(array: number[]) {
         // Sum the votes. Assuming 'votes' is an array of numbers
@@ -164,6 +173,14 @@ export function Results() {
                                 <ListItem>
                                     <Chip label={ballots.length} variant="outlined" sx={{mr: 2}}/>
                                     Total Ballots
+                                </ListItem>
+                                <ListItem>
+                                    <Chip label={calculateTotalValidVotes()} variant="outlined" sx={{mr: 2}}/>
+                                    Total Valid Votes
+                                </ListItem>
+                                <ListItem>
+                                    <Chip label={calculateAttendanceRatio()} variant="outlined" color={totalAllowedVoters > 0 ? "primary" : "default"} sx={{mr: 2}}/>
+                                    Attendance Ratio {totalAllowedVoters === 0 && "(Set total allowed voters in Settings)"}
                                 </ListItem>
                                 <ListItem>
                                     <Chip label={totalChecksumByPositions()} variant="outlined" color={"info"}

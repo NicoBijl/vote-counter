@@ -53,10 +53,15 @@ For any questions or technical support, please create a GitHub issue in our repo
 
 ## Todo:
 
-- Results: add allowed number of votes, add number of valid votes.
-- Add a help section and shortcuts overview.
-- add the total number of allowed voters to calculated a attendance ratio.
-- Develop a positions editor for easy management of election positions.
-- Create comprehensive documentation for the dashboard to assist users.
-- Add functionality to synchronize results across devices and verify consistency of ballots and vote counts.
-- add open commit to rewrite commit message on feature branches. https://github.com/marketplace/actions/opencommit-improve-commits-with-ai
+- **Results Enhancement**
+  - Display total valid votes count - per position (compared to allowed votes)
+  - Display total valid votes count - overall (compared to allowed votes)
+- **Help & Documentation**: Create a dedicated help section with keyboard shortcuts overview and usage examples
+- **Voter Metrics**: Implement voter attendance tracking to calculate participation ratio against registered voters
+- **Position Management**: Build an intuitive position editor interface with drag-and-drop functionality
+- **User Guide**: Develop comprehensive documentation with screenshots and use cases for all app features
+- **Cross-Device Validation**: Create a dual-device verification system where votes counted on separate devices can be compared to identify discrepancies and ensure counting accuracy
+- **Export Capabilities**: Add functionality to export results in CSV/PDF formats for record-keeping
+- **Audit Trails**: Implement logging system for tracking ballot modifications for security and transparency
+- **Automated Testing**: Set up comprehensive testing suite for core voting and counting functionality
+- **CI/CD Pipeline**: Configure GitHub Actions for automated testing and deployment workflow including OpenCommit for better commit messages
