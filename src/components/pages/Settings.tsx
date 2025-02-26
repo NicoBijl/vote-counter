@@ -53,6 +53,8 @@ export function Settings() {
         importPositionsFile.current?.click()
     }
     const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        
         const fileReader = new FileReader()
         fileReader.readAsText(e.target.files[0], "UTF-8")
         fileReader.onload = e => {
