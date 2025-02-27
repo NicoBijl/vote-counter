@@ -85,7 +85,7 @@ export function BallotPosition({
             <Grid alignItems="center" container>
                 <Grid item xs={2}></Grid>
                 <Grid item xs={"auto"}>
-                    <Typography variant="subtitle2">Max: {position.max}</Typography>
+                    <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
                 </Grid>
             </Grid>
 
@@ -221,7 +221,7 @@ export function Votes() {
     }
 
     function maxReached(positionKey: PositionKey): boolean {
-        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
+        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
     }
 
     function getNextPositionTabIndex() {

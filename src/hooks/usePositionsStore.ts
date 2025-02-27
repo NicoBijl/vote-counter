@@ -3,7 +3,7 @@ import {create} from "zustand";
 import {persist} from "zustand/middleware";
 
 const defaultPositions = [{
-    max: 1,
+    maxVotesPerBallot: 1,
     key: "diaken",
     title: "Diaken",
     persons: [
@@ -12,7 +12,7 @@ const defaultPositions = [{
     ]
 },
     {
-        max: 2,
+        maxVotesPerBallot: 2,
         key: "ouderling",
         title: "Ouderling",
         persons: [
@@ -23,7 +23,7 @@ const defaultPositions = [{
         ]
     },
     {
-        max: 1,
+        maxVotesPerBallot: 1,
         key: "secretaris",
         title: "Secretaris",
         persons: [
