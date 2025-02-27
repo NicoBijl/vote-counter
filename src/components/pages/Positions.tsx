@@ -35,7 +35,7 @@ export function Positions() {
 
                                 <TextField label="Key" name="positionKey" defaultValue={position.key}/>
                                 <TextField label="Title" name="positionTitle" defaultValue={position.title}/>
-                                <TextField label="Max" name="positionMax" defaultValue={position.max} type={"number"}/>
+                                <TextField label="Max Votes Per Ballot" name="positionMaxVotesPerBallot" defaultValue={position.maxVotesPerBallot} type={"number"}/>
                                 <Divider sx={{mt: 2}} variant="middle"></Divider>
                                 <Typography variant="h5" marginTop={2}>Persons</Typography>
 

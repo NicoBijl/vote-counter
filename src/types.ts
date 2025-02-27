@@ -1,12 +1,12 @@
 export interface Position {
-    max: number,
+    maxVotesPerBallot: number,
     key: PositionKey,
     title: string,
     persons: Array<Person>
 }
 
 export function isPosition(object: any): object is Position {
-    return 'key' in object && 'title' in object && 'persons' in object && 'max' in object
+    return 'key' in object && 'title' in object && 'persons' in object && 'maxVotesPerBallot' in object
 }
 
 export interface Person {

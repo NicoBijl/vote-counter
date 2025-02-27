@@ -81,7 +81,7 @@ export function Results() {
 
     function countVotes(position: Position, personKey: PersonKey): number {
         const checked = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person == personKey).length
-        return personKey == 'invalid' ? checked * position.max : checked;
+        return personKey == 'invalid' ? checked * position.maxVotesPerBallot : checked;
     }
 
     function chipColor(position: Position, personKey: PersonKey) {
@@ -93,13 +93,13 @@ export function Results() {
     }
 
     function blankVotes(positionKey: PositionKey): number {
-        const maxForPosition = positions.find(p => p.key == positionKey)!.max
+        const maxVotesPerBallot = positions.find(p => p.key == positionKey)!.maxVotesPerBallot
         return ballots.flatMap(b => {
             const isInvalid = !!b.vote.find(v => v.position == positionKey && v.person == "invalid")
             if (isInvalid) {
                 return 0
             } else {
-                return maxForPosition - b.vote.filter(v => v.position == positionKey && v.person != "invalid").length
+                return maxVotesPerBallot - b.vote.filter(v => v.position == positionKey && v.person != "invalid").length
             }
         }).reduce((acc, val) => acc + val, 0)
     }
@@ -135,7 +135,7 @@ export function Results() {
                             {positions.map((position) => (
                                 <Grid item xs={6} sm={3} key={"votes-" + position.key}>
                                     <Typography variant="h4">{position.title}</Typography>
-                                    <Typography variant="subtitle2">Max: {position.max}</Typography>
+                                    <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
                                     <List>
                                         {position.persons.sort((p1, p2) => {
                                             if (!sortResultsByVoteCount) {
@@ -194,7 +194,7 @@ export function Results() {
                                                 Votes: <strong>{calculatePositionValidVotes(position.key)}</strong> valid,{' '}
                                                 <strong>{blankVotes(position.key)}</strong> blank,{' '}
                                                 <strong>{countVotes(position, "invalid")}</strong> invalid{' '}
-                                                (<strong>{ballots.length * position.max}</strong> allowed)
+                                                (<strong>{ballots.length * position.maxVotesPerBallot}</strong> allowed)
                                             </Typography>
                                         </ListItem>
                                         <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
