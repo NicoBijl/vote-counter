@@ -170,13 +170,19 @@ export function Results() {
                                                     outerRadius={60}
                                                     paddingAngle={5}
                                                     dataKey="value"
-                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                    label={({ name, value }) => `${name}: ${value}`}
                                                 >
                                                     {getPositionVoteStats(position).map((_, index) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}
                                                 </Pie>
-                                                <RechartsTooltip formatter={(value) => [`${value} votes`, '']} />
+                                                <RechartsTooltip 
+                                                    formatter={(value, name) => {
+                                                        const total = getPositionVoteStats(position).reduce((sum, item) => sum + item.value, 0);
+                                                        const percent = ((value as number) / total * 100).toFixed(1);
+                                                        return [`${value} votes (${percent}%)`, name];
+                                                    }} 
+                                                />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </Box>
