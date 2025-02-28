@@ -106,19 +106,41 @@ export function Results() {
 
     // Function to generate pie chart data for each position
     function getPositionVoteStats(position: Position) {
+        // Get vote counts for each person
+        const personVotes = position.persons.map(person => ({
+            name: person.name,
+            value: countVotes(position, person.key),
+            key: person.key
+        }));
+        
+        // Add blank and invalid
         const invalid = countVotes(position, "invalid");
         const blank = blankVotes(position.key);
-        const valid = calculatePositionValidVotes(position.key);
         
-        return [
-            { name: 'Valid', value: valid, color: '#4caf50' },
-            { name: 'Blank', value: blank, color: '#9e9e9e' },
-            { name: 'Invalid', value: invalid, color: '#f44336' }
+        // Calculate total
+        const total = personVotes.reduce((sum, entry) => sum + entry.value, 0) + blank + invalid;
+        
+        // Add total to each entry
+        const result = [
+            ...personVotes.map(entry => ({ ...entry, total })),
+            { name: 'Blank', value: blank, color: '#9e9e9e', total },
+            { name: 'Invalid', value: invalid, color: '#f44336', total }
         ];
+        
+        return result;
     }
     
-    // Colors for the pie chart
-    const COLORS = ['#4caf50', '#9e9e9e', '#f44336'];
+    // Colors for the pie chart - generate a color palette with enough colors for persons plus blank/invalid
+    function generateColorPalette(position: Position) {
+        // Generate colors for each person
+        const personColors = position.persons.map((_, index) => {
+            // Use different hues of blue and green for persons
+            return `hsl(${200 - index * (120 / Math.max(1, position.persons.length))}, 70%, 50%)`;
+        });
+        
+        // Add colors for blank and invalid
+        return [...personColors, '#9e9e9e', '#f44336'];
+    }
     
     return (
         <>
@@ -168,35 +190,36 @@ export function Results() {
                                                     cy="50%"
                                                     innerRadius={30}
                                                     outerRadius={60}
-                                                    paddingAngle={5}
+                                                    paddingAngle={2}
                                                     dataKey="value"
-                                                    label={({ name, value }) => `${name}: ${value}`}
+                                                    label={({ name, value }) => `${value}`}
                                                 >
-                                                    {getPositionVoteStats(position).map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    {getPositionVoteStats(position).map((entry, index) => (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={generateColorPalette(position)[index]}
+                                                        />
                                                     ))}
                                                 </Pie>
                                                 <RechartsTooltip 
-                                                    formatter={(value, name) => {
-                                                        const total = getPositionVoteStats(position).reduce((sum, item) => sum + item.value, 0);
+                                                    formatter={(value, name, entry) => {
+                                                        const { total } = entry.payload;
                                                         const percent = ((value as number) / total * 100).toFixed(1);
                                                         return [`${value} votes (${percent}%)`, name];
                                                     }} 
                                                 />
+                                                <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                                                    {getPositionVoteStats(position)[0].total}
+                                                </text>
+                                                <text x="50%" y="60%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '12px' }}>
+                                                    total votes
+                                                </text>
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </Box>
                                     
                                     {/* Stats in compact form */}
                                     <List dense>
-                                        <ListItem disableGutters>
-                                            <Typography variant="caption">
-                                                Votes: <strong>{calculatePositionValidVotes(position.key)}</strong> valid,{' '}
-                                                <strong>{blankVotes(position.key)}</strong> blank,{' '}
-                                                <strong>{countVotes(position, "invalid")}</strong> invalid{' '}
-                                                (<strong>{ballots.length * position.maxVotesPerBallot}</strong> allowed)
-                                            </Typography>
-                                        </ListItem>
                                         <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
                                             <ListItem disableGutters>
                                                 <Chip label={electoralDivisor(position)} variant="outlined" size="small" sx={{mr: 1}}/>

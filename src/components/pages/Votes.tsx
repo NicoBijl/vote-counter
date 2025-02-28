@@ -8,7 +8,8 @@ import {
     DialogContentText,
     DialogTitle,
     FormControlLabel,
-    Pagination
+    Pagination,
+    Tooltip
 } from "@mui/material";
 import {PersonKey, Position, PositionKey} from "../../types.ts";
 import {ChangeEvent, useEffect, useRef, useState} from "react";
@@ -272,13 +273,17 @@ export function Votes() {
             </Dialog>
             <Grid container spacing={1} alignItems={"stretch"}>
                 <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
-                    <Button variant="outlined" sx={{height: '100%', width: '100%'}}
-                            aria-label="previous vote"
-                            tabIndex={500}
-                            disabled={currentBallotIndex == 0}
-                            onClick={previousVote}>
-                        <KeyboardArrowLeftIcon/>
-                    </Button>
+                    <Tooltip title="Previous vote (Up arrow)">
+                        <span>
+                            <Button variant="outlined" sx={{height: '100%', width: '100%'}}
+                                    aria-label="previous vote"
+                                    tabIndex={500}
+                                    disabled={currentBallotIndex == 0}
+                                    onClick={previousVote}>
+                                <KeyboardArrowLeftIcon/>
+                            </Button>
+                        </span>
+                    </Tooltip>
                 </Grid>
                 <Grid item xs>
                     <Grid item container>
@@ -302,30 +307,40 @@ export function Votes() {
                             ></BallotPosition>
                         )}
                         <Grid item container xs={12} justifyContent="space-evenly">
-                            <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
-                                    tabIndex={2000}
-                            >
-                                Next Ballot
-                            </Button>
-                            <Button disabled={currentBallotIndex == 0}
-                                    onClick={openRemoveConfirmationDialog}
-                                    variant="outlined" color="error"
-                                    sx={{mt: 2, mb: 2}}
-                                    tabIndex={2000}
-                            >
-                                Remove Ballot
-                            </Button>
+                            <Tooltip title="Next ballot (N)">
+                                <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
+                                        tabIndex={2000}
+                                >
+                                    Next Ballot
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Remove ballot (Backspace)">
+                                <span>
+                                    <Button disabled={currentBallotIndex == 0}
+                                            onClick={openRemoveConfirmationDialog}
+                                            variant="outlined" color="error"
+                                            sx={{mt: 2, mb: 2}}
+                                            tabIndex={2000}
+                                    >
+                                        Remove Ballot
+                                    </Button>
+                                </span>
+                            </Tooltip>
 
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
-                    <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
-                            aria-label="next vote"
-                            onClick={nextVote}
-                            disabled={currentBallotIndex == ballots.length - 1}>
-                        <KeyboardArrowRightIcon/>
-                    </Button>
+                    <Tooltip title="Next vote (Down arrow or N)">
+                        <span>
+                            <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
+                                    aria-label="next vote"
+                                    onClick={nextVote}
+                                    disabled={currentBallotIndex == ballots.length - 1}>
+                                <KeyboardArrowRightIcon/>
+                            </Button>
+                        </span>
+                    </Tooltip>
                 </Grid>
 
                 <Grid item xs={12} alignContent="stretch">
