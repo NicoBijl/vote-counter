@@ -54,8 +54,7 @@ For any questions or technical support, please create a GitHub issue in our repo
 ## Todo:
 
 - **Results Enhancement**
-  - Display total valid votes count - per position (compared to allowed votes)
-  - Display total valid votes count - overall (compared to allowed votes)
+  - Show the blank / valid / invalid / allowed votes per position in a way the takes up less space. These items could be shown in one line, maybe with a pie diagram since blank + valid + valid = allowed
 - **Help & Documentation**: Create a dedicated help section with keyboard shortcuts overview and usage examples
 - **Voter Metrics**: Implement voter attendance tracking to calculate participation ratio against registered voters
 - **Position Management**: Build an intuitive position editor interface with drag-and-drop functionality

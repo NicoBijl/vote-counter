@@ -41,6 +41,26 @@ export const usePositionsStore = create<PositionStore>()(persist(
     },
     {
         name: "positions-store", // by default localStorage is used.
+        onRehydrateStorage: () => (state) => {
+            // Handle backward compatibility for max -> maxVotesPerBallot rename
+            if (state && state.positions) {
+                const migratedPositions = state.positions.map((position: any) => {
+                    // If position has 'max' but not 'maxVotesPerBallot', migrate the data
+                    if ('max' in position && !('maxVotesPerBallot' in position)) {
+                        return { 
+                            ...position, 
+                            maxVotesPerBallot: position.max,
+                            // Removing max property to avoid duplication
+                            max: undefined
+                        };
+                    }
+                    return position;
+                });
+                
+                // Update state with migrated positions
+                state.setPositions(migratedPositions);
+            }
+        }
     }
 ))
 
