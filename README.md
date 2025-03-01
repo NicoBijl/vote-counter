@@ -14,7 +14,7 @@ The Vote Counter App is accessible online at [https://vote.bijlit.nl/](https://v
 1. **Open the Web App**: Navigate to [https://vote.bijlit.nl/](https://vote.bijlit.nl/) to start the voting process or to view election results.
 2. **Navigate the App**: Use the menu or the intuitive user interface to move between different sections of the app, such as voting, viewing candidates, or checking election results.
 3. **Vote**: If participating in an election, select your candidates of choice according to the instructions provided within the app. Your selections will be securely submitted for counting.
-4. **Results**: Access the results page to see updated counts for each candidate and position. This page also shows information on blank and invalid votes, and highlights candidates who have surpassed the electoral divisor.
+4. **Results**: Access the results page to see updated counts for each candidate and position. This page also shows information on blank and invalid votes, and highlights candidates who have surpassed the electoral divisor. Results can be sorted by vote count to easily identify the most popular candidates.
 
 The Vote Counter App offers a streamlined experience for managing and participating in elections, providing clear, concise, and immediate insights into electoral outcomes.
 
@@ -54,7 +54,9 @@ For any questions or technical support, please create a GitHub issue in our repo
 ## Todo:
 
 - **Results Enhancement**
-  - Show the blank / valid / invalid / allowed votes per position in a way the takes up less space. These items could be shown in one line, maybe with a pie diagram since blank + valid + valid = allowed
+  - Position interface contains maxVotesPerBallot. Add a maxVacancies on the Position interface. Use this setting in the results page. Only the top maxVacancies people should be shown as green, as they will be elected (not all people with more votes then the electoral divisor)
+  - The elected people (so the people with the most votes, more then the divisor, and only the top x maxVacancies) should have the Chip in green.
+  - The other people with more votes then the divisor should have a green Chip, outlined.
 - **Help & Documentation**: Create a dedicated help section with keyboard shortcuts overview and usage examples
 - **Voter Metrics**: Implement voter attendance tracking to calculate participation ratio against registered voters
 - **Position Management**: Build an intuitive position editor interface with drag-and-drop functionality

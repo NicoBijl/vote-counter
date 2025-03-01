@@ -1,7 +1,7 @@
 import Grid from "@mui/material/Grid";
 import {PersonKey, Position, PositionKey} from "../../types.ts";
 import Typography from "@mui/material/Typography";
-import {Alert, Box, Chip, ListItem, Tooltip} from "@mui/material";
+import {Alert, Box, Chip, FormControlLabel, ListItem, Switch, Tooltip} from "@mui/material";
 import List from "@mui/material/List";
 import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
@@ -14,7 +14,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } 
 export function Results() {
     const {positions} = usePositionsStore()
     const {ballots} = useBallotStore()
-    const {electoralDivisorVariable, sortResultsByVoteCount, totalAllowedVoters} = useSettingsStore()
+    const {electoralDivisorVariable, totalAllowedVoters, sortResultsByVoteCount, setSortResultsByVoteCount} = useSettingsStore()
 
     function calculateAttendanceRatio(): string {
         if (totalAllowedVoters === 0) return "N/A";
@@ -23,10 +23,6 @@ export function Results() {
 
     function calculateTotalValidVotes(): number {
         return ballots.flatMap(b => b.vote).filter(v => v.person !== "invalid").length;
-    }
-    
-    function calculatePositionValidVotes(positionKey: PositionKey): number {
-        return ballots.flatMap(b => b.vote).filter(v => v.position === positionKey && v.person !== "invalid").length;
     }
 
     function checksum(array: number[]) {
@@ -112,24 +108,24 @@ export function Results() {
             value: countVotes(position, person.key),
             key: person.key
         }));
-        
+
         // Add blank and invalid
         const invalid = countVotes(position, "invalid");
         const blank = blankVotes(position.key);
-        
+
         // Calculate total
         const total = personVotes.reduce((sum, entry) => sum + entry.value, 0) + blank + invalid;
-        
+
         // Add total to each entry
         const result = [
             ...personVotes.map(entry => ({ ...entry, total })),
             { name: 'Blank', value: blank, color: '#9e9e9e', total },
             { name: 'Invalid', value: invalid, color: '#f44336', total }
         ];
-        
+
         return result;
     }
-    
+
     // Colors for the pie chart - generate a color palette with enough colors for persons plus blank/invalid
     function generateColorPalette(position: Position) {
         // Generate colors for each person
@@ -137,11 +133,11 @@ export function Results() {
             // Use different hues of blue and green for persons
             return `hsl(${200 - index * (120 / Math.max(1, position.persons.length))}, 70%, 50%)`;
         });
-        
+
         // Add colors for blank and invalid
         return [...personColors, '#9e9e9e', '#f44336'];
     }
-    
+
     return (
         <>
             <Alert severity={"info"} sx={{mb: 2}}>
@@ -150,7 +146,29 @@ export function Results() {
                 and valid votes per position are clearly indicated. Candidates who have received more or equal votes than 
                 the electoral divisor are highlighted in green, signifying their leading status.
             </Alert>
-            <Paper sx={{p: 2}}>
+            <Paper sx={{p: 2, position: 'relative'}}>
+                <Box sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 16,
+                    display: 'flex',
+                    alignItems: 'center'
+                }}>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={sortResultsByVoteCount}
+                                onChange={(_, checked) => setSortResultsByVoteCount(checked)}
+                                size="small"
+                            />
+                        }
+                        label={
+                            <Typography variant="caption">
+                                Sort by votes
+                            </Typography>
+                        }
+                    />
+                </Box>
                 <Grid container>
                     <Grid item container>
                         <Grid item container>
@@ -159,18 +177,44 @@ export function Results() {
                                     <Typography variant="h4">{position.title}</Typography>
                                     <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
                                     <List>
-                                        {position.persons.sort((p1, p2) => {
-                                            if (!sortResultsByVoteCount) {
-                                                return 0;
-                                            }
-                                            return countVotes(position, p2.key) - countVotes(position, p1.key);
-                                        }).map((person) => (
-                                            <ListItem disableGutters key={person.key}>
-                                                <Chip label={countVotes(position, person.key)} variant="filled"
-                                                      color={chipColor(position, person.key)} sx={{mr: 2}}/>
-                                                <ListItemText>{person.name}</ListItemText>
-                                            </ListItem>
-                                        ))}
+                                        {/* Above electoral divisor */}
+                                        {(sortResultsByVoteCount 
+                                            ? [...position.persons].sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
+                                            : position.persons)
+                                            .filter(person => countVotes(position, person.key) >= electoralDivisor(position))
+                                            .map((person) => (
+                                                <ListItem disableGutters key={person.key}>
+                                                    <Chip label={countVotes(position, person.key)} variant="filled"
+                                                          color={chipColor(position, person.key)} sx={{mr: 2}}/>
+                                                    <ListItemText>{person.name}</ListItemText>
+                                                </ListItem>
+                                            ))}
+
+                                        {/* Electoral Divisor Display */}
+                                        {sortResultsByVoteCount && (
+                                            <Box sx={{ position: 'relative', my: 2 }}>
+                                                <Divider>
+                                                    <Chip 
+                                                        label={`Electoral Divisor: ${electoralDivisor(position)}`}
+                                                        size="small"
+                                                        variant="outlined"
+                                                    />
+                                                </Divider>
+                                            </Box>
+                                        )}
+
+                                        {/* Below electoral divisor */}
+                                        {(sortResultsByVoteCount 
+                                            ? [...position.persons].sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
+                                            : position.persons)
+                                            .filter(person => countVotes(position, person.key) < electoralDivisor(position))
+                                            .map((person) => (
+                                                <ListItem disableGutters key={person.key}>
+                                                    <Chip label={countVotes(position, person.key)} variant="filled"
+                                                          color={chipColor(position, person.key)} sx={{mr: 2}}/>
+                                                    <ListItemText>{person.name}</ListItemText>
+                                                </ListItem>
+                                            ))}
                                     </List>
                                 </Grid>
                             ))}
@@ -179,7 +223,7 @@ export function Results() {
                             {positions.map((position) => (
                                 <Grid item xs={6} sm={3} key={"rest-" + position.key}>
                                     <Divider variant={"middle"}></Divider>
-                                    
+
                                     {/* Vote Statistics Pie Chart */}
                                     <Box sx={{ height: 200, width: "100%", mt: 2 }}>
                                         <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +236,7 @@ export function Results() {
                                                     outerRadius={60}
                                                     paddingAngle={2}
                                                     dataKey="value"
-                                                    label={({ name, value }) => `${value}`}
+                                                    label={({ value }) => `${value}`}
                                                 >
                                                     {getPositionVoteStats(position).map((entry, index) => (
                                                         <Cell 
@@ -211,13 +255,13 @@ export function Results() {
                                                 <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '14px', fontWeight: 'bold' }}>
                                                     {getPositionVoteStats(position)[0].total}
                                                 </text>
-                                                <text x="50%" y="60%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '12px' }}>
-                                                    total votes
+                                                <text x="50%" y="55%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '12px' }}>
+                                                    votes
                                                 </text>
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </Box>
-                                    
+
                                     {/* Stats in compact form */}
                                     <List dense>
                                         <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
