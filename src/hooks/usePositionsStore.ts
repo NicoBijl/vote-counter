@@ -1,6 +1,6 @@
 import {Position} from "../types.ts";
 import {create} from "zustand";
-import {persist} from "zustand/middleware";
+import {persist, createJSONStorage} from "zustand/middleware";
 import {convertLegacyPositions} from "../utils/positionUtils";
 
 const defaultPositions = [{
@@ -36,39 +36,43 @@ const defaultPositions = [{
     }
 ] as Array<Position>;
 
-export const usePositionsStore = create<PositionStore>()(persist(
-    (set) => ({
-        positions: defaultPositions,  // Start with default positions
-        setPositions: (newPositions: Position[]) => {
-            console.log("[DEBUG_LOG] Setting positions:", newPositions);
-            set({ positions: newPositions });
-        }
-    }),
-    {
-        name: "positions-store",
-        version: 1,
-        onRehydrateStorage: () => (state) => {
-            console.log("[DEBUG_LOG] Starting rehydration");
-
-            // If no state, return early
-            if (!state) {
-                console.log("[DEBUG_LOG] No state found");
-                return;
+export const usePositionsStore = create<PositionStore>()(
+    persist(
+        (set) => ({
+            positions: defaultPositions,  // Start with default positions
+            setPositions: (newPositions: Position[]) => {
+                console.log("[DEBUG_LOG] Setting positions:", newPositions);
+                set({ positions: newPositions });
             }
+        }),
+        {
+            name: "positions-store",
+            version: 1,
+            storage: createJSONStorage(() => localStorage),
+            migrate: (persistedState: any, version: number) => {
+                console.log("[DEBUG_LOG] Migrating state version:", version);
 
-            // Get stored positions or empty array
-            const storedPositions = state.positions || [];
-            console.log("[DEBUG_LOG] Found positions in state:", storedPositions);
-
-            // Only process if we have stored positions
-            if (storedPositions.length > 0) {
-                const migratedPositions = convertLegacyPositions(storedPositions);
-                console.log("[DEBUG_LOG] Setting migrated positions:", migratedPositions);
-                state.setPositions(migratedPositions);
+                if (version === 0) {
+                    // Handle migration from version 0
+                    const positions = persistedState?.positions || defaultPositions;
+                    return {
+                        ...persistedState,
+                        positions: convertLegacyPositions(positions)
+                    };
+                }
+                return persistedState;
+            },
+            onRehydrateStorage: () => (state) => {
+                console.log("[DEBUG_LOG] Starting rehydration");
+                if (!state) {
+                    console.log("[DEBUG_LOG] No state found");
+                    return;
+                }
+                console.log("[DEBUG_LOG] Rehydrated state:", state);
             }
         }
-    }
-))
+    )
+)
 
 interface PositionStore {
     positions: Array<Position>
