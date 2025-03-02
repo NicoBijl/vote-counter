@@ -52,15 +52,31 @@ export const usePositionsStore = create<PositionStore>()(
             migrate: (persistedState: any, version: number) => {
                 console.log("[DEBUG_LOG] Migrating state version:", version);
 
-                if (version === 0) {
-                    // Handle migration from version 0
+                // Make sure we have a valid state object
+                if (!persistedState) {
+                    console.log("[DEBUG_LOG] No persisted state, using defaults");
+                    return { positions: defaultPositions };
+                }
+
+                if (version === 0 || !('positions' in persistedState)) {
+                    // Handle migration from version 0 or missing/invalid position data
+                    console.log("[DEBUG_LOG] Migrating from version 0 or invalid state");
+                    
+                    // Get positions from state if they exist, otherwise use defaults
                     const positions = persistedState?.positions || defaultPositions;
+                    
                     return {
                         ...persistedState,
                         positions: convertLegacyPositions(positions)
                     };
                 }
-                return persistedState;
+                
+                // For any other version, ensure positions have the correct format
+                console.log("[DEBUG_LOG] Ensuring position format for version:", version);
+                return {
+                    ...persistedState,
+                    positions: convertLegacyPositions(persistedState.positions)
+                };
             },
             onRehydrateStorage: () => (state) => {
                 console.log("[DEBUG_LOG] Starting rehydration");

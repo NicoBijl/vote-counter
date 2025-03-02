@@ -12,7 +12,20 @@ export interface LegacyPosition extends Omit<Position, 'maxVotesPerBallot' | 'ma
  */
 export function convertLegacyPosition(position: LegacyPosition): Position {
     console.log("[DEBUG_LOG] Processing position:", position);
-
+    
+    // Validate position object has the minimum required fields
+    if (!position || typeof position !== 'object') {
+        console.error("[DEBUG_LOG] Invalid position object:", position);
+        throw new Error("Invalid position object");
+    }
+    
+    // Ensure the position has key and title
+    const key = position.key || `position_${Date.now()}`;
+    const title = position.title || "Unnamed Position";
+    
+    // Ensure persons array exists
+    const persons = Array.isArray(position.persons) ? position.persons : [];
+    
     // First, handle migration from max to maxVotesPerBallot
     let maxVotesPerBallot = 1;
     if ('max' in position && position.max !== undefined) {
@@ -28,9 +41,9 @@ export function convertLegacyPosition(position: LegacyPosition): Position {
 
     // Create a new position with all required fields
     const updatedPosition: Position = {
-        key: position.key,
-        title: position.title,
-        persons: position.persons,
+        key,
+        title,
+        persons,
         maxVotesPerBallot,
         maxVacancies
     };
@@ -41,7 +54,24 @@ export function convertLegacyPosition(position: LegacyPosition): Position {
 
 /**
  * Converts an array of positions from legacy format to current format.
+ * If the input is not an array, returns an empty array.
  */
-export function convertLegacyPositions(positions: LegacyPosition[]): Position[] {
-    return positions.map(convertLegacyPosition);
+export function convertLegacyPositions(positions: any): Position[] {
+    if (!Array.isArray(positions)) {
+        console.error("[DEBUG_LOG] Expected positions to be an array but got:", typeof positions);
+        return [];
+    }
+    
+    // Filter out invalid positions and convert the valid ones
+    return positions
+        .filter(position => position && typeof position === 'object')
+        .map(position => {
+            try {
+                return convertLegacyPosition(position);
+            } catch (error) {
+                console.error("[DEBUG_LOG] Error converting position:", error);
+                return null;
+            }
+        })
+        .filter(Boolean) as Position[];
 }
