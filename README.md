@@ -54,9 +54,6 @@ For any questions or technical support, please create a GitHub issue in our repo
 ## Todo:
 
 - **Results Enhancement**
-  - Position interface contains maxVotesPerBallot. Add a maxVacancies on the Position interface. Use this setting in the results page. Only the top maxVacancies people should be shown as green, as they will be elected (not all people with more votes then the electoral divisor)
-  - The elected people (so the people with the most votes, more then the divisor, and only the top x maxVacancies) should have the Chip in green.
-  - The other people with more votes then the divisor should have a green Chip, outlined.
 - **Help & Documentation**: Create a dedicated help section with keyboard shortcuts overview and usage examples
 - **Voter Metrics**: Implement voter attendance tracking to calculate participation ratio against registered voters
 - **Position Management**: Build an intuitive position editor interface with drag-and-drop functionality
