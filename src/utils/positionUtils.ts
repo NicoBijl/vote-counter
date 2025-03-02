@@ -1,6 +1,6 @@
 import { Position } from "../types";
 
-interface LegacyPosition extends Omit<Position, 'maxVotesPerBallot' | 'maxVacancies'> {
+export interface LegacyPosition extends Omit<Position, 'maxVotesPerBallot' | 'maxVacancies'> {
     max?: number;
     maxVotesPerBallot?: number;
     maxVacancies?: number;
