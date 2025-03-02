@@ -31,7 +31,7 @@ export function Positions() {
             }
 
             // Convert positions from potentially legacy format
-            const convertedPositions = convertLegacyPositions(data);
+            const convertedPositions = convertLegacyPositions(data as Array<Record<string, unknown>>);
             setPositions(convertedPositions);
         } catch (error) {
             console.error("[DEBUG_LOG] Error uploading positions:", error);
