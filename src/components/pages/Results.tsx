@@ -80,12 +80,32 @@ export function Results() {
         return personKey == 'invalid' ? checked * position.maxVotesPerBallot : checked;
     }
 
-    function chipColor(position: Position, personKey: PersonKey) {
-        if (countVotes(position, personKey) >= electoralDivisor(position)) {
-            return 'success'
-        } else {
-            return 'default'
+    function getTopCandidates(position: Position): PersonKey[] {
+        return position.persons
+            .map(person => ({ key: person.key, votes: countVotes(position, person.key) }))
+            .sort((a, b) => b.votes - a.votes)
+            .slice(0, position.maxVacancies)
+            .map(candidate => candidate.key);
+    }
+
+    function chipColor(position: Position, personKey: PersonKey): { color: 'success' | 'default', variant?: 'outlined' } {
+        if (personKey === 'invalid') {
+            return { color: 'default' };
         }
+
+        const votes = countVotes(position, personKey);
+        const divisor = electoralDivisor(position);
+        const topCandidates = getTopCandidates(position);
+
+        if (votes >= divisor) {
+            if (topCandidates.includes(personKey)) {
+                return { color: 'success' };
+            } else {
+                return { color: 'success', variant: 'outlined' };
+            }
+        }
+
+        return { color: 'default' };
     }
 
     function blankVotes(positionKey: PositionKey): number {
@@ -175,7 +195,9 @@ export function Results() {
                             {positions.map((position) => (
                                 <Grid item xs={6} sm={3} key={"votes-" + position.key}>
                                     <Typography variant="h4">{position.title}</Typography>
-                                    <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
+                                    <Typography variant="subtitle2">
+                                        Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
+                                    </Typography>
                                     <List>
                                         {/* Above electoral divisor */}
                                         {(sortResultsByVoteCount 
@@ -184,15 +206,17 @@ export function Results() {
                                             .filter(person => countVotes(position, person.key) >= electoralDivisor(position))
                                             .map((person) => (
                                                 <ListItem disableGutters key={person.key}>
-                                                    <Chip label={countVotes(position, person.key)} variant="filled"
-                                                          color={chipColor(position, person.key)} sx={{mr: 2}}/>
+                                                    <Chip 
+                                                          label={countVotes(position, person.key)}
+                                                          {...chipColor(position, person.key)}
+                                                          sx={{mr: 2}}/>
                                                     <ListItemText>{person.name}</ListItemText>
                                                 </ListItem>
                                             ))}
 
                                         {/* Electoral Divisor Display */}
                                         {sortResultsByVoteCount && (
-                                            <Box sx={{ position: 'relative', my: 2 }}>
+                                            <Box sx={{ position: 'relative', my: 4 }}>
                                                 <Divider>
                                                     <Chip 
                                                         label={`Electoral Divisor: ${electoralDivisor(position)}`}
@@ -210,8 +234,10 @@ export function Results() {
                                             .filter(person => countVotes(position, person.key) < electoralDivisor(position))
                                             .map((person) => (
                                                 <ListItem disableGutters key={person.key}>
-                                                    <Chip label={countVotes(position, person.key)} variant="filled"
-                                                          color={chipColor(position, person.key)} sx={{mr: 2}}/>
+                                                    <Chip 
+                                                          label={countVotes(position, person.key)}
+                                                          {...chipColor(position, person.key)}
+                                                          sx={{mr: 2}}/>
                                                     <ListItemText>{person.name}</ListItemText>
                                                 </ListItem>
                                             ))}
@@ -238,10 +264,10 @@ export function Results() {
                                                     dataKey="value"
                                                     label={({ value }) => `${value}`}
                                                 >
-                                                    {getPositionVoteStats(position).map((entry, index) => (
+                                                    {getPositionVoteStats(position).map((entry, index: number) => (
                                                         <Cell 
                                                             key={`cell-${index}`} 
-                                                            fill={generateColorPalette(position)[index]}
+                                                            fill={generateColorPalette(position)[index % generateColorPalette(position).length]}
                                                         />
                                                     ))}
                                                 </Pie>
@@ -264,12 +290,14 @@ export function Results() {
 
                                     {/* Stats in compact form */}
                                     <List dense>
-                                        <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
-                                            <ListItem disableGutters>
-                                                <Chip label={electoralDivisor(position)} variant="outlined" size="small" sx={{mr: 1}}/>
-                                                <Typography variant="caption">Electoral Divisor</Typography>
-                                            </ListItem>
-                                        </Tooltip>
+                                        {!sortResultsByVoteCount && (
+                                            <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
+                                                <ListItem disableGutters>
+                                                    <Chip label={electoralDivisor(position)} variant="outlined" size="small" sx={{mr: 1}}/>
+                                                    <Typography variant="caption">Electoral Divisor</Typography>
+                                                </ListItem>
+                                            </Tooltip>
+                                        )}
                                         <ListItem disableGutters>
                                             <Chip label={positionChecksum(position)} variant="outlined" size="small" sx={{mr: 1}}/>
                                             <Typography variant="caption">Checksum</Typography>
