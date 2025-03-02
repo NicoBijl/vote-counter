@@ -78,7 +78,7 @@ export function Settings() {
                         setPositions(positionsInput)
                     } else {
                         // Try converting from legacy format
-                        const convertedPositions = convertLegacyPositions(jsonObjects);
+                        const convertedPositions = convertLegacyPositions(jsonObjects as Array<Record<string, unknown>>);
                         console.log("Converted positions from legacy format", convertedPositions)
                         setPositions(convertedPositions)
                     }

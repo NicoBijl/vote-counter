@@ -120,8 +120,16 @@ export function Results() {
         }).reduce((acc, val) => acc + val, 0)
     }
 
+    interface VoteStats {
+        name: string;
+        value: number;
+        color?: string;
+        total: number;
+        key?: string;
+    }
+
     // Function to generate pie chart data for each position
-    function getPositionVoteStats(position: Position) {
+    function getPositionVoteStats(position: Position): VoteStats[] {
         // Get vote counts for each person
         const personVotes = position.persons.map(person => ({
             name: person.name,
@@ -264,7 +272,7 @@ export function Results() {
                                                     dataKey="value"
                                                     label={({ value }) => `${value}`}
                                                 >
-                                                    {getPositionVoteStats(position).map((entry, index: number) => (
+                                                    {getPositionVoteStats(position).map((entry: VoteStats, index: number) => (
                                                         <Cell 
                                                             key={`cell-${index}`} 
                                                             fill={generateColorPalette(position)[index % generateColorPalette(position).length]}
