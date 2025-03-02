@@ -20,11 +20,14 @@ describe('Positions', () => {
         mockStore.setPositions.mockClear();
 
         // Mock FileReader
-        jest.spyOn(window, 'FileReader').mockImplementation(() => ({
+        const mockFileReader = {
             readAsText: jest.fn(),
             onload: null,
             result: '',
-        } as unknown as FileReader));
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+        };
+        jest.spyOn(window, 'FileReader').mockImplementation(() => mockFileReader as unknown as FileReader);
     });
 
     afterEach(() => {
@@ -51,9 +54,9 @@ describe('Positions', () => {
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         // Get the FileReader instance and simulate file load
-        const fileReader = (window.FileReader as jest.Mock).mock.instances[0];
-        Object.defineProperty(fileReader, 'result', { value: JSON.stringify(newFormatPositions) });
-        fileReader.onload?.(new ProgressEvent('load'));
+        const mockFileReader = (window.FileReader as unknown as jest.Mock).mock.instances[0] as any;
+        Object.defineProperty(mockFileReader, 'result', { value: JSON.stringify(newFormatPositions) });
+        mockFileReader.onload?.(new ProgressEvent('load'));
 
         await waitFor(() => {
             expect(mockStore.setPositions).toHaveBeenCalledWith(newFormatPositions);

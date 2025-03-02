@@ -7,7 +7,7 @@ import UploadIcon from '@mui/icons-material/Upload';
 import Paper from "@mui/material/Paper";
 import {PersonKey, PositionKey} from "../../types.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
-import {convertLegacyPositions} from "../../utils/positionUtils";
+import {convertLegacyPositions, LegacyPosition} from "../../utils/positionUtils";
 import {useState, useRef} from "react";
 
 
@@ -31,7 +31,7 @@ export function Positions() {
             }
 
             // Convert positions from potentially legacy format
-            const convertedPositions = convertLegacyPositions(data as Array<Record<string, unknown>>);
+            const convertedPositions = convertLegacyPositions(data as LegacyPosition[]);
             setPositions(convertedPositions);
         } catch (error) {
             console.error("[DEBUG_LOG] Error uploading positions:", error);

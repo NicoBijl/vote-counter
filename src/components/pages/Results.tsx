@@ -272,7 +272,7 @@ export function Results() {
                                                     dataKey="value"
                                                     label={({ value }) => `${value}`}
                                                 >
-                                                    {getPositionVoteStats(position).map((entry: VoteStats, index: number) => (
+                                                    {getPositionVoteStats(position).map((_: VoteStats, index: number) => (
                                                         <Cell 
                                                             key={`cell-${index}`} 
                                                             fill={generateColorPalette(position)[index % generateColorPalette(position).length]}

@@ -7,7 +7,7 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
 import {useRef, useState} from "react";
 import {isPosition, Position} from "../../types.ts";
-import {convertLegacyPositions} from "../../utils/positionUtils";
+import {convertLegacyPositions, LegacyPosition} from "../../utils/positionUtils";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 
@@ -78,7 +78,7 @@ export function Settings() {
                         setPositions(positionsInput)
                     } else {
                         // Try converting from legacy format
-                        const convertedPositions = convertLegacyPositions(jsonObjects as Array<Record<string, unknown>>);
+                        const convertedPositions = convertLegacyPositions(jsonObjects as LegacyPosition[]);
                         console.log("Converted positions from legacy format", convertedPositions)
                         setPositions(convertedPositions)
                     }
