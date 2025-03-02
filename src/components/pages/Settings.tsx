@@ -7,6 +7,7 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
 import {useRef, useState} from "react";
 import {isPosition, Position} from "../../types.ts";
+import {convertLegacyPositions} from "../../utils/positionUtils";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 
@@ -25,6 +26,7 @@ export function Settings() {
     const importPositionsFile = useRef<HTMLInputElement | null>(null);
     const [importPositionsConfirmDialogOpen, setDialogOpen] = useState(false)
     const [positionUploadTime, setPositionsUploadTime] = useState<Date | null>(null)
+    const [uploadError, setUploadError] = useState<string | null>(null)
 
 
     function downloadFile(value: object, fileName: string) {
@@ -54,7 +56,7 @@ export function Settings() {
     }
     const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        
+
         const fileReader = new FileReader()
         fileReader.readAsText(e.target.files[0], "UTF-8")
         fileReader.onload = e => {
@@ -62,16 +64,32 @@ export function Settings() {
             const fileContent = e?.target?.result
             if (typeof fileContent === "string") {
                 const jsonObjects = JSON.parse(fileContent) as object[]
-                if (jsonObjects.every(v => isPosition(v))) {
-                    const positionsInput = jsonObjects as Position[]
-                    console.log("uploaded positions", jsonObjects, positionsInput)
-                    setPositions(positionsInput)
+                if (!Array.isArray(jsonObjects)) {
+                    console.log("File content is not an array!")
+                    setUploadError("Uploaded file must contain an array of positions")
+                    return;
+                }
+
+                try {
+                    // Try parsing as new format first
+                    if (jsonObjects.every(v => isPosition(v))) {
+                        const positionsInput = jsonObjects as Position[]
+                        console.log("Uploaded positions in new format", positionsInput)
+                        setPositions(positionsInput)
+                    } else {
+                        // Try converting from legacy format
+                        const convertedPositions = convertLegacyPositions(jsonObjects);
+                        console.log("Converted positions from legacy format", convertedPositions)
+                        setPositions(convertedPositions)
+                    }
+
                     importPositionsFile.current!.value = ""
                     setDialogOpen(true)
                     setPositionsUploadTime(new Date())
-                } else {
-                    console.log("Not every items is valid!")
-                    return
+                    setUploadError(null)
+                } catch (error) {
+                    console.log("Failed to parse positions in any format!", error)
+                    setUploadError("Failed to parse positions. Please check the file format.")
                 }
 
 
@@ -84,11 +102,20 @@ export function Settings() {
     return (
         <>
             <Snackbar
-                open={importPositionsConfirmDialogOpen}
-                autoHideDuration={20000}
+                open={importPositionsConfirmDialogOpen && !uploadError}
+                autoHideDuration={6000}
                 onClose={() => setDialogOpen(false)}
-                message={"Positions imported at " + positionUploadTime?.toLocaleTimeString()}
+                message={"Positions successfully imported at " + positionUploadTime?.toLocaleTimeString()}
             />
+            <Snackbar
+                open={!!uploadError}
+                autoHideDuration={6000}
+                onClose={() => setUploadError(null)}
+            >
+                <Alert onClose={() => setUploadError(null)} severity="error">
+                    {uploadError}
+                </Alert>
+            </Snackbar>
             <Stack spacing={2}>
                 <Card sx={{p: 2}}>
                     <Stack spacing={2}>
