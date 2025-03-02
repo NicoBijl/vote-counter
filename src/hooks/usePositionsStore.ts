@@ -1,9 +1,11 @@
 import {Position} from "../types.ts";
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
+import {convertLegacyPositions} from "../utils/positionUtils";
 
 const defaultPositions = [{
     maxVotesPerBallot: 1,
+    maxVacancies: 1,
     key: "diaken",
     title: "Diaken",
     persons: [
@@ -13,6 +15,7 @@ const defaultPositions = [{
 },
     {
         maxVotesPerBallot: 2,
+        maxVacancies: 2,
         key: "ouderling",
         title: "Ouderling",
         persons: [
@@ -24,6 +27,7 @@ const defaultPositions = [{
     },
     {
         maxVotesPerBallot: 1,
+        maxVacancies: 1,
         key: "secretaris",
         title: "Secretaris",
         persons: [
@@ -33,31 +37,33 @@ const defaultPositions = [{
 ] as Array<Position>;
 
 export const usePositionsStore = create<PositionStore>()(persist(
-    (set) => {
-        return ({
-            positions: defaultPositions,
-            setPositions : (newPositions) => set(() => ({positions: newPositions}))
-        })
-    },
+    (set) => ({
+        positions: defaultPositions,  // Start with default positions
+        setPositions: (newPositions: Position[]) => {
+            console.log("[DEBUG_LOG] Setting positions:", newPositions);
+            set({ positions: newPositions });
+        }
+    }),
     {
-        name: "positions-store", // by default localStorage is used.
+        name: "positions-store",
+        version: 1,
         onRehydrateStorage: () => (state) => {
-            // Handle backward compatibility for max -> maxVotesPerBallot rename
-            if (state && state.positions) {
-                const migratedPositions = state.positions.map((position: any) => {
-                    // If position has 'max' but not 'maxVotesPerBallot', migrate the data
-                    if ('max' in position && !('maxVotesPerBallot' in position)) {
-                        return { 
-                            ...position, 
-                            maxVotesPerBallot: position.max,
-                            // Removing max property to avoid duplication
-                            max: undefined
-                        };
-                    }
-                    return position;
-                });
-                
-                // Update state with migrated positions
+            console.log("[DEBUG_LOG] Starting rehydration");
+
+            // If no state, return early
+            if (!state) {
+                console.log("[DEBUG_LOG] No state found");
+                return;
+            }
+
+            // Get stored positions or empty array
+            const storedPositions = state.positions || [];
+            console.log("[DEBUG_LOG] Found positions in state:", storedPositions);
+
+            // Only process if we have stored positions
+            if (storedPositions.length > 0) {
+                const migratedPositions = convertLegacyPositions(storedPositions);
+                console.log("[DEBUG_LOG] Setting migrated positions:", migratedPositions);
                 state.setPositions(migratedPositions);
             }
         }
