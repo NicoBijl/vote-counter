@@ -172,13 +172,17 @@ export function Votes() {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         useHotkeys(`${i}`, () => {
                 console.log("focused Position: ", focusPosition, i)
-                toggleChecked(focusPosition!, focusPosition!.persons[i - 1].key);
+                if (focusPosition && focusPosition.persons.length >= i) {
+                    toggleChecked(focusPosition, focusPosition.persons[i - 1].key);
+                }
             }, {enableOnFormTags: true}
         )
     }
     // invalid
     useHotkeys("i", () => {
-            toggleChecked(focusPosition!, "invalid");
+            if (focusPosition) {
+                toggleChecked(focusPosition, "invalid");
+            }
         }, {enableOnFormTags: true}
     )
     useHotkeys("Enter", () => {
@@ -220,7 +224,8 @@ export function Votes() {
     }
 
     function maxReached(positionKey: PositionKey): boolean {
-        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
+        if (!currentVote) return false;
+        return currentVote.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
     }
 
     function getNextPositionTabIndex() {
@@ -240,7 +245,9 @@ export function Votes() {
     }
 
     function remove() {
-        removeBallot(currentVote!);
+        if (currentVote) {
+            removeBallot(currentVote);
+        }
         setIsDialogOpen(false)
     }
 
