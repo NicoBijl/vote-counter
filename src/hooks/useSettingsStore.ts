@@ -13,7 +13,7 @@ export const useSettingsStore = create<SettingsStore>()(persist(
         })
     },
     {
-        name: "positions-store", // by default localStorage is used.
+        name: "settings-store", // by default localStorage is used.
     }
 ))
 

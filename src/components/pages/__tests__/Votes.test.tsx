@@ -2,10 +2,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Votes } from '../Votes';
 import { Position, Ballot } from '../../../types';
 import { expect, jest, describe, it, beforeEach } from '@jest/globals';
-import userEvent from '@testing-library/user-event';
 
-// Mock the stores
-const mockBallotStore = {
+// Create store states
+const initialBallotState = {
     ballots: [] as Ballot[],
     currentBallotIndex: 0,
     removeBallot: jest.fn(),
@@ -15,22 +14,28 @@ const mockBallotStore = {
     setBallotVote: jest.fn()
 };
 
-const mockPositionsStore = {
-    positions: [] as Position[]
+const initialPositionsState = {
+    positions: [] as Position[],
+    setPositions: jest.fn()
 };
 
-// Mock the hooks
+// Mock the hooks with store creation
 jest.mock('../../../hooks/useBallotStore', () => ({
     useBallotStore: jest.fn((selector) => {
-        if (selector) {
-            return selector(mockBallotStore);
+        if (typeof selector === 'function') {
+            return selector(initialBallotState);
         }
-        return mockBallotStore;
+        return initialBallotState;
     })
 }));
 
 jest.mock('../../../hooks/usePositionsStore', () => ({
-    usePositionsStore: () => mockPositionsStore
+    usePositionsStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialPositionsState);
+        }
+        return initialPositionsState;
+    })
 }));
 
 // Mock react-hotkeys-hook
@@ -52,18 +57,19 @@ describe('Votes', () => {
 
     beforeEach(() => {
         // Reset mock data
-        mockBallotStore.ballots = [
+        initialBallotState.ballots = [
             { id: '1', index: 0, vote: [] }
         ];
-        mockBallotStore.currentBallotIndex = 0;
-        mockPositionsStore.positions = [mockPosition];
-        
+        initialBallotState.currentBallotIndex = 0;
+        initialPositionsState.positions = [mockPosition];
+
         // Reset mock functions
-        mockBallotStore.removeBallot.mockClear();
-        mockBallotStore.nextVote.mockClear();
-        mockBallotStore.previousVote.mockClear();
-        mockBallotStore.setVoteIndex.mockClear();
-        mockBallotStore.setBallotVote.mockClear();
+        initialBallotState.removeBallot.mockClear();
+        initialBallotState.nextVote.mockClear();
+        initialBallotState.previousVote.mockClear();
+        initialBallotState.setVoteIndex.mockClear();
+        initialBallotState.setBallotVote.mockClear();
+        initialPositionsState.setPositions.mockClear();
     });
 
     it('renders ballot navigation', () => {
@@ -90,7 +96,7 @@ describe('Votes', () => {
             { id: '1', index: 0, vote: [] },
             { id: '2', index: 1, vote: [] }
         ];
-        
+
         render(<Votes />);
         const nextButton = screen.getByRole('button', { name: /next/i });
         fireEvent.click(nextButton);
@@ -101,9 +107,9 @@ describe('Votes', () => {
         render(<Votes />);
         const removeButton = screen.getByRole('button', { name: /remove/i });
         fireEvent.click(removeButton);
-        
+
         expect(screen.getByText(/Are you sure you want to remove this ballot/i)).toBeInTheDocument();
-        
+
         const confirmButton = screen.getByRole('button', { name: /confirm/i });
         fireEvent.click(confirmButton);
         expect(mockBallotStore.removeBallot).toHaveBeenCalledWith(0);
@@ -115,11 +121,11 @@ describe('Votes', () => {
             index: i,
             vote: []
         }));
-        
+
         render(<Votes />);
         const pagination = screen.getByRole('navigation');
         expect(pagination).toBeInTheDocument();
-        
+
         const pageButton = screen.getByRole('button', { name: /page 2/i });
         fireEvent.click(pageButton);
         expect(mockBallotStore.setVoteIndex).toHaveBeenCalledWith(10);
@@ -127,11 +133,11 @@ describe('Votes', () => {
 
     it('handles keyboard navigation', () => {
         render(<Votes />);
-        
+
         // Test arrow down for next ballot
         fireEvent.keyDown(document.body, { key: 'ArrowDown' });
         expect(mockBallotStore.nextVote).toHaveBeenCalled();
-        
+
         // Test arrow up for previous ballot
         fireEvent.keyDown(document.body, { key: 'ArrowUp' });
         expect(mockBallotStore.previousVote).toHaveBeenCalled();
@@ -140,7 +146,7 @@ describe('Votes', () => {
     it('disables next button on last ballot', () => {
         mockBallotStore.currentBallotIndex = 0;
         mockBallotStore.ballots = [{ id: '1', index: 0, vote: [] }];
-        
+
         render(<Votes />);
         const nextButton = screen.getByRole('button', { name: /next/i });
         expect(nextButton).toBeDisabled();
@@ -148,7 +154,7 @@ describe('Votes', () => {
 
     it('disables previous button on first ballot', () => {
         mockBallotStore.currentBallotIndex = 0;
-        
+
         render(<Votes />);
         const prevButton = screen.getByRole('button', { name: /previous/i });
         expect(prevButton).toBeDisabled();

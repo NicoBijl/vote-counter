@@ -3,40 +3,68 @@ import { Results } from '../Results';
 import { Position, Ballot } from '../../../types';
 import { expect, jest, describe, it, beforeEach } from '@jest/globals';
 
-// Mock the stores
-const mockPositionsStore = {
+// Create store states
+const initialPositionsState = {
     positions: [] as Position[],
+    setPositions: jest.fn()
 };
 
-const mockBallotStore = {
+const initialBallotState = {
     ballots: [] as Ballot[],
+    currentBallotIndex: 0,
+    removeBallot: jest.fn(),
+    nextVote: jest.fn(),
+    previousVote: jest.fn(),
+    setVoteIndex: jest.fn(),
+    setBallotVote: jest.fn()
 };
 
-const mockSettingsStore = {
+const initialSettingsState = {
     electoralDivisorVariable: 0.8,
+    setElectoralDivisorVariable: jest.fn(),
     totalAllowedVoters: 100,
+    setTotalAllowedVoters: jest.fn(),
     sortResultsByVoteCount: true,
-    setSortResultsByVoteCount: jest.fn(),
+    setSortResultsByVoteCount: jest.fn()
 };
 
+// Mock the hooks with store creation
 jest.mock('../../../hooks/usePositionsStore', () => ({
-    usePositionsStore: () => mockPositionsStore
+    usePositionsStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialPositionsState);
+        }
+        return initialPositionsState;
+    })
 }));
 
 jest.mock('../../../hooks/useBallotStore', () => ({
-    useBallotStore: () => mockBallotStore
+    useBallotStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialBallotState);
+        }
+        return initialBallotState;
+    })
 }));
 
 jest.mock('../../../hooks/useSettingsStore', () => ({
-    useSettingsStore: () => mockSettingsStore
+    useSettingsStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialSettingsState);
+        }
+        return initialSettingsState;
+    })
 }));
 
 describe('Results', () => {
     beforeEach(() => {
         // Reset mock data
-        mockPositionsStore.positions = [];
-        mockBallotStore.ballots = [];
-        mockSettingsStore.setSortResultsByVoteCount.mockClear();
+        initialPositionsState.positions = [];
+        initialBallotState.ballots = [];
+        initialSettingsState.setSortResultsByVoteCount.mockClear();
+        initialSettingsState.setElectoralDivisorVariable.mockClear();
+        initialSettingsState.setTotalAllowedVoters.mockClear();
+        initialPositionsState.setPositions.mockClear();
     });
 
     it('renders empty state when no positions or ballots', () => {
@@ -51,7 +79,7 @@ describe('Results', () => {
             { id: '1', vote: [] },
             { id: '2', vote: [] }
         ];
-        
+
         render(<Results />);
         expect(screen.getByText('Attendance: 2.0%')).toBeInTheDocument();
     });

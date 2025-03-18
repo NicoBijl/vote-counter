@@ -22,7 +22,7 @@ import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useHotkeys} from "react-hotkeys-hook";
 
-interface BallotPositionProps {
+export interface BallotPositionProps {
     position: Position,
     positionTabIndex: number,
     focussed: boolean,
