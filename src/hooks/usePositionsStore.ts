@@ -78,14 +78,6 @@ export const usePositionsStore = create<PositionStore>()(
                     positions: convertLegacyPositions(persistedState.positions)
                 };
             },
-            onRehydrateStorage: () => (state) => {
-                console.log("[DEBUG_LOG] Starting rehydration");
-                if (!state) {
-                    console.log("[DEBUG_LOG] No state found");
-                    return;
-                }
-                console.log("[DEBUG_LOG] Rehydrated state:", state);
-            }
         }
     )
 )

@@ -19,3 +19,14 @@ export interface Person {
 
 export type PositionKey = string
 export type PersonKey = string
+
+export interface Vote {
+    position: PositionKey;
+    person: PersonKey;
+}
+
+export interface Ballot {
+    id: string;
+    index: number;
+    vote: Vote[];
+}

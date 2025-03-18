@@ -3,50 +3,72 @@ import { Settings } from '../Settings';
 import { Position, Ballot } from '../../../types';
 import { expect, jest, describe, it, beforeEach } from '@jest/globals';
 
-// Mock the stores
-const mockPositionsStore = {
+// Create store states
+const initialPositionsState = {
     positions: [] as Position[],
-    setPositions: jest.fn(),
+    setPositions: jest.fn()
 };
 
-const mockBallotStore = {
+const initialBallotState = {
     ballots: [] as Ballot[],
     removeAllBallots: jest.fn(),
+    currentBallotIndex: 0,
+    removeBallot: jest.fn(),
+    nextVote: jest.fn(),
+    previousVote: jest.fn(),
+    setVoteIndex: jest.fn(),
+    setBallotVote: jest.fn()
 };
 
-const mockSettingsStore = {
+const initialSettingsState = {
     electoralDivisorVariable: 0.8,
     setElectoralDivisorVariable: jest.fn(),
-    sortResultsByVoteCount: true,
-    setSortResultsByVoteCount: jest.fn(),
     totalAllowedVoters: 100,
     setTotalAllowedVoters: jest.fn(),
+    sortResultsByVoteCount: true,
+    setSortResultsByVoteCount: jest.fn()
 };
 
+// Mock the hooks with store creation
 jest.mock('../../../hooks/usePositionsStore', () => ({
-    usePositionsStore: () => mockPositionsStore
+    usePositionsStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialPositionsState);
+        }
+        return initialPositionsState;
+    })
 }));
 
 jest.mock('../../../hooks/useBallotStore', () => ({
-    useBallotStore: () => mockBallotStore
+    useBallotStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialBallotState);
+        }
+        return initialBallotState;
+    })
 }));
 
 jest.mock('../../../hooks/useSettingsStore', () => ({
-    useSettingsStore: () => mockSettingsStore
+    useSettingsStore: jest.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(initialSettingsState);
+        }
+        return initialSettingsState;
+    })
 }));
 
 describe('Settings', () => {
     beforeEach(() => {
         // Reset mock data and functions
-        mockPositionsStore.positions = [];
-        mockPositionsStore.setPositions.mockClear();
-        mockBallotStore.removeAllBallots.mockClear();
-        mockSettingsStore.setElectoralDivisorVariable.mockClear();
-        mockSettingsStore.setSortResultsByVoteCount.mockClear();
-        mockSettingsStore.setTotalAllowedVoters.mockClear();
+        initialPositionsState.positions = [];
+        initialPositionsState.setPositions.mockClear();
+        initialBallotState.removeAllBallots.mockClear();
+        initialSettingsState.setElectoralDivisorVariable.mockClear();
+        initialSettingsState.setSortResultsByVoteCount.mockClear();
+        initialSettingsState.setTotalAllowedVoters.mockClear();
 
         // Mock file operations
-        global.URL.createObjectURL = jest.fn();
+        global.URL.createObjectURL = jest.fn().mockReturnValue('mock-url') as unknown as (blob: Blob | MediaSource) => string;
         global.URL.revokeObjectURL = jest.fn();
     });
 
@@ -63,8 +85,8 @@ describe('Settings', () => {
         ];
         mockPositionsStore.positions = mockPositions;
 
-        const mockLink = { click: jest.fn() };
-        jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+        const mockLink = { click: jest.fn() } as HTMLAnchorElement;
+        jest.spyOn(document, 'createElement').mockReturnValue(mockLink);
 
         render(<Settings />);
         fireEvent.click(screen.getByText('Export Positions'));
@@ -79,7 +101,7 @@ describe('Settings', () => {
         ];
 
         const file = new File([JSON.stringify(validPositions)], 'positions.json', { type: 'application/json' });
-        
+
         render(<Settings />);
         const importButton = screen.getByText('Import Positions');
         fireEvent.click(importButton);
@@ -88,7 +110,7 @@ describe('Settings', () => {
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(mockPositionsStore.setPositions).toHaveBeenCalledWith(validPositions);
+            expect(initialPositionsState.setPositions).toHaveBeenCalledWith(validPositions);
             expect(screen.getByText(/Positions successfully imported/)).toBeInTheDocument();
         });
     });
@@ -96,7 +118,7 @@ describe('Settings', () => {
     it('handles position import with invalid file', async () => {
         const invalidData = { notAnArray: true };
         const file = new File([JSON.stringify(invalidData)], 'positions.json', { type: 'application/json' });
-        
+
         render(<Settings />);
         const importButton = screen.getByText('Import Positions');
         fireEvent.click(importButton);
@@ -112,27 +134,27 @@ describe('Settings', () => {
     it('removes all votes when clicked', () => {
         render(<Settings />);
         fireEvent.click(screen.getByText('Remove all votes'));
-        expect(mockBallotStore.removeAllBallots).toHaveBeenCalled();
+        expect(initialBallotState.removeAllBallots).toHaveBeenCalled();
     });
 
     it('updates electoral divisor', () => {
         render(<Settings />);
         const input = screen.getByLabelText('Electoral Divisor');
         fireEvent.change(input, { target: { value: '0.9' } });
-        expect(mockSettingsStore.setElectoralDivisorVariable).toHaveBeenCalledWith(0.9);
+        expect(initialSettingsState.setElectoralDivisorVariable).toHaveBeenCalledWith(0.9);
     });
 
     it('updates total allowed voters', () => {
         render(<Settings />);
         const input = screen.getByLabelText('Total Allowed Voters');
         fireEvent.change(input, { target: { value: '150' } });
-        expect(mockSettingsStore.setTotalAllowedVoters).toHaveBeenCalledWith(150);
+        expect(initialSettingsState.setTotalAllowedVoters).toHaveBeenCalledWith(150);
     });
 
     it('toggles sort by vote count', () => {
         render(<Settings />);
         const toggle = screen.getByRole('checkbox');
         fireEvent.click(toggle);
-        expect(mockSettingsStore.setSortResultsByVoteCount).toHaveBeenCalledWith(false);
+        expect(initialSettingsState.setSortResultsByVoteCount).toHaveBeenCalledWith(false);
     });
 });

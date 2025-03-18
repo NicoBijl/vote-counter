@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BallotPosition } from '../Votes';
+import { BallotPosition, BallotPositionProps } from '../Votes';
 import { Position } from '../../../types';
 import { expect, jest, describe, it } from '@jest/globals';
 
@@ -15,14 +15,14 @@ describe('BallotPosition', () => {
         maxVacancies: 1
     };
 
-    const mockProps = {
+    const mockProps: BallotPositionProps = {
         position: mockPosition,
         positionTabIndex: 1,
         focussed: false,
-        setFocusPosition: jest.fn(),
-        isChecked: jest.fn().mockReturnValue(false),
-        setChecked: jest.fn(),
-        maxReached: jest.fn().mockReturnValue(false)
+        setFocusPosition: jest.fn<void, [Position]>(),
+        isChecked: jest.fn<boolean, [string, string]>().mockReturnValue(false),
+        setChecked: jest.fn<void, [string, string, boolean]>(),
+        maxReached: jest.fn<boolean, [string]>().mockReturnValue(false)
     };
 
     it('renders position title and persons', () => {
@@ -51,9 +51,9 @@ describe('BallotPosition', () => {
     });
 
     it('disables checkboxes when max is reached', () => {
-        const maxReachedProps = {
+        const maxReachedProps: BallotPositionProps = {
             ...mockProps,
-            maxReached: jest.fn().mockReturnValue(true)
+            maxReached: jest.fn<boolean, [string]>().mockReturnValue(true)
         };
         render(<BallotPosition {...maxReachedProps} />);
         const checkboxes = screen.getAllByRole('checkbox').slice(0, 2); // Exclude invalid checkbox
@@ -87,9 +87,9 @@ describe('BallotPosition', () => {
     });
 
     it('disables person checkboxes when invalid is selected', () => {
-        const invalidSelectedProps = {
+        const invalidSelectedProps: BallotPositionProps = {
             ...mockProps,
-            isChecked: jest.fn().mockImplementation((_, person) => person === 'invalid')
+            isChecked: jest.fn<boolean, [string, string]>().mockImplementation((_, person) => person === 'invalid')
         };
         render(<BallotPosition {...invalidSelectedProps} />);
         const personCheckboxes = screen.getAllByRole('checkbox').slice(0, 2); // Exclude invalid checkbox
