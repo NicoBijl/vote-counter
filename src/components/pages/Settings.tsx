@@ -6,7 +6,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
 import {useRef, useState} from "react";
-import {isPosition, Position} from "../../types.ts";
+import {Ballot, isBallot, isPosition, Position} from "../../types.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 
@@ -21,8 +21,10 @@ export function Settings() {
     } = useSettingsStore()
     const importVotesFile = useRef<HTMLInputElement | null>(null);
     const importPositionsFile = useRef<HTMLInputElement | null>(null);
-    const [importPositionsConfirmDialogOpen, setDialogOpen] = useState(false)
+    const [importPositionsConfirmDialogOpen, setPositionsDialogOpen] = useState(false)
     const [positionUploadTime, setPositionsUploadTime] = useState<Date | null>(null)
+    const [importVotesConfirmDialogOpen, setVotesDialogOpen] = useState(false)
+    const [votesUploadTime, setVotesUploadTime] = useState<Date | null>(null)
 
 
     function downloadFile(value: object, fileName: string) {
@@ -50,29 +52,66 @@ export function Settings() {
         console.log("file ", importPositionsFile?.current)
         importPositionsFile.current?.click()
     }
-    const onPositionsFileChange = (e: any) => {
+    const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileReader = new FileReader()
-        fileReader.readAsText(e.target.files[0], "UTF-8")
-        fileReader.onload = e => {
-            console.log('e.target.result', e?.target?.result)
-            const fileContent = e?.target?.result
-            if (typeof fileContent === "string") {
-                const jsonObjects = JSON.parse(fileContent) as object[]
-                if (jsonObjects.every(v => isPosition(v))) {
-                    const positionsInput = jsonObjects as Position[]
-                    console.log("uploaded positions", jsonObjects, positionsInput)
-                    setPositions(positionsInput)
-                    importPositionsFile.current!.value = ""
-                    setDialogOpen(true)
-                    setPositionsUploadTime(new Date())
+        if (e.target.files && e.target.files.length > 0) {
+            fileReader.readAsText(e.target.files[0], "UTF-8")
+            fileReader.onload = e => {
+                console.log('e.target.result', e?.target?.result)
+                const fileContent = e?.target?.result
+                if (typeof fileContent === "string") {
+                    const jsonObjects = JSON.parse(fileContent) as object[]
+                    if (jsonObjects.every(v => isPosition(v))) {
+                        const positionsInput = jsonObjects as Position[]
+                        console.log("uploaded positions", jsonObjects, positionsInput)
+                        setPositions(positionsInput)
+                        importPositionsFile.current!.value = ""
+                        setPositionsDialogOpen(true)
+                        setPositionsUploadTime(new Date())
+                    } else {
+                        console.log("Not every items is valid!")
+                        return
+                    }
                 } else {
-                    console.log("Not every items is valid!")
-                    return
+                    console.log("other file content", typeof fileContent)
                 }
+            }
+        }
+    }
 
+    const openFileChooserVotes = () => {
+        console.log("file ", importVotesFile?.current)
+        importVotesFile.current?.click()
+    }
 
-            } else {
-                console.log("other file content", typeof fileContent)
+    const onVotesFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader()
+        if (e.target.files && e.target.files.length > 0) {
+            fileReader.readAsText(e.target.files[0], "UTF-8")
+            fileReader.onload = e => {
+                console.log('e.target.result', e?.target?.result)
+                const fileContent = e?.target?.result
+                if (typeof fileContent === "string") {
+                    const jsonObjects = JSON.parse(fileContent) as object[]
+                    if (jsonObjects.every(v => isBallot(v))) {
+                        const ballotsInput = jsonObjects as Ballot[]
+                        console.log("uploaded ballots", jsonObjects, ballotsInput)
+                        // Replace all ballots with the imported ones
+                        removeAllBallots()
+                        ballotsInput.forEach(ballot => {
+                            useBallotStore.getState().saveVote(ballot)
+                        })
+                        useBallotStore.getState().setVoteIndex(ballotsInput.length - 1)
+                        importVotesFile.current!.value = ""
+                        setVotesDialogOpen(true)
+                        setVotesUploadTime(new Date())
+                    } else {
+                        console.log("Not every item is valid!")
+                        return
+                    }
+                } else {
+                    console.log("other file content", typeof fileContent)
+                }
             }
         }
     }
@@ -82,8 +121,14 @@ export function Settings() {
             <Snackbar
                 open={importPositionsConfirmDialogOpen}
                 autoHideDuration={20000}
-                onClose={() => setDialogOpen(false)}
+                onClose={() => setPositionsDialogOpen(false)}
                 message={"Positions imported at " + positionUploadTime?.toLocaleTimeString()}
+            />
+            <Snackbar
+                open={importVotesConfirmDialogOpen}
+                autoHideDuration={20000}
+                onClose={() => setVotesDialogOpen(false)}
+                message={"Votes imported at " + votesUploadTime?.toLocaleTimeString()}
             />
             <Stack spacing={2}>
                 <Card sx={{p: 2}}>
@@ -107,9 +152,11 @@ export function Settings() {
                     <Stack spacing={2}>
                         <Typography variant={"h4"}>Votes</Typography>
                         <Button startIcon={<DownloadIcon/>} onClick={exportVotes}>Export Votes</Button>
+                        <Button startIcon={<UploadIcon/>} onClick={openFileChooserVotes}>Import Votes</Button>
                         <Button color={"error"} startIcon={<DangerousIcon/>} onClick={removeAllVotes}>Remove all
                             votes</Button>
-                        <input type='importVotes' id='importVotes' ref={importVotesFile} style={{display: 'none'}}/>
+                        <input type='file' id='importVotes' ref={importVotesFile} style={{display: 'none'}}
+                               onChange={onVotesFileChange}/>
                     </Stack>
                 </Card>
                 <Card sx={{p: 2}}>
