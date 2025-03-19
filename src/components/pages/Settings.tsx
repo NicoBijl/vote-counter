@@ -6,14 +6,14 @@ import DownloadIcon from '@mui/icons-material/Download';
 import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
 import {useRef, useState} from "react";
-import {isPosition, Position} from "../../types.ts";
+import {Ballot, isBallot, isPosition, Position} from "../../types.ts";
 import {convertLegacyPositions, LegacyPosition} from "../../utils/positionUtils";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 
 
 export function Settings() {
     const {positions, setPositions} = usePositionsStore()
-    const {ballots, removeAllBallots} = useBallotStore()
+    const {ballots, removeAllBallots, importBallots} = useBallotStore()
     const {
         electoralDivisorVariable,
         setElectoralDivisorVariable,
@@ -25,7 +25,9 @@ export function Settings() {
     const importVotesFile = useRef<HTMLInputElement | null>(null);
     const importPositionsFile = useRef<HTMLInputElement | null>(null);
     const [importPositionsConfirmDialogOpen, setDialogOpen] = useState(false)
+    const [importVotesConfirmDialogOpen, setVotesDialogOpen] = useState(false)
     const [positionUploadTime, setPositionsUploadTime] = useState<Date | null>(null)
+    const [votesUploadTime, setVotesUploadTime] = useState<Date | null>(null)
     const [uploadError, setUploadError] = useState<string | null>(null)
 
 
@@ -53,6 +55,11 @@ export function Settings() {
     const openFileChooserPositions = () => {
         console.log("file ", importPositionsFile?.current)
         importPositionsFile.current?.click()
+    }
+
+    const openFileChooserVotes = () => {
+        console.log("file ", importVotesFile?.current)
+        importVotesFile.current?.click()
     }
     const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -99,6 +106,50 @@ export function Settings() {
         }
     }
 
+
+    const onVotesFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const fileReader = new FileReader()
+        fileReader.readAsText(e.target.files[0], "UTF-8")
+        fileReader.onload = e => {
+            console.log('e.target.result', e?.target?.result)
+            const fileContent = e?.target?.result
+            if (typeof fileContent === "string") {
+                try {
+                    const jsonObjects = JSON.parse(fileContent) as object[]
+                    if (!Array.isArray(jsonObjects)) {
+                        console.log("File content is not an array!")
+                        setUploadError("Uploaded file must contain an array of ballots")
+                        return;
+                    }
+
+                    // Validate ballots
+                    if (jsonObjects.every(v => isBallot(v))) {
+                        const ballotsInput = jsonObjects as Ballot[]
+                        console.log("Uploaded ballots", ballotsInput)
+
+                        // Set the imported ballots in the store
+                        importBallots(ballotsInput);
+
+                        importVotesFile.current!.value = ""
+                        setVotesDialogOpen(true)
+                        setVotesUploadTime(new Date())
+                        setUploadError(null)
+                    } else {
+                        console.log("Invalid ballot format")
+                        setUploadError("Invalid ballot format. Please check the file structure.")
+                    }
+                } catch (error) {
+                    console.log("Failed to parse ballots!", error)
+                    setUploadError("Failed to parse ballots. Please check the file format.")
+                }
+            } else {
+                console.log("other file content", typeof fileContent)
+            }
+        }
+    }
+
     return (
         <>
             <Snackbar
@@ -106,6 +157,12 @@ export function Settings() {
                 autoHideDuration={6000}
                 onClose={() => setDialogOpen(false)}
                 message={"Positions successfully imported at " + positionUploadTime?.toLocaleTimeString()}
+            />
+            <Snackbar
+                open={importVotesConfirmDialogOpen && !uploadError}
+                autoHideDuration={6000}
+                onClose={() => setVotesDialogOpen(false)}
+                message={"Votes successfully imported at " + votesUploadTime?.toLocaleTimeString()}
             />
             <Snackbar
                 open={!!uploadError}
@@ -138,9 +195,12 @@ export function Settings() {
                     <Stack spacing={2}>
                         <Typography variant={"h4"}>Votes</Typography>
                         <Button startIcon={<DownloadIcon/>} onClick={exportVotes}>Export Votes</Button>
+                        <Button startIcon={<UploadIcon/>} onClick={openFileChooserVotes}>Import Votes</Button>
                         <Button color={"error"} startIcon={<DangerousIcon/>} onClick={removeAllVotes}>Remove all
                             votes</Button>
-                        <input type='importVotes' id='importVotes' ref={importVotesFile} style={{display: 'none'}}/>
+                        <input type='file' id='importVotes' ref={importVotesFile} 
+                               style={{display: 'none'}}
+                               onChange={onVotesFileChange}/>
                     </Stack>
                 </Card>
                 <Card sx={{p: 2}}>
