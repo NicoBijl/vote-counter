@@ -207,10 +207,20 @@ export function Results() {
                                         Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
                                     </Typography>
                                     <List>
-                                        {/* Above electoral divisor */}
-                                        {(sortResultsByVoteCount 
-                                            ? [...position.persons].sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
-                                            : position.persons)
+                                        {/* When not sorting by vote count, display all persons in original order */}
+                                        {!sortResultsByVoteCount && position.persons.map((person) => (
+                                            <ListItem disableGutters key={person.key}>
+                                                <Chip 
+                                                      label={countVotes(position, person.key)}
+                                                      {...chipColor(position, person.key)}
+                                                      sx={{mr: 2}}/>
+                                                <ListItemText>{person.name}</ListItemText>
+                                            </ListItem>
+                                        ))}
+
+                                        {/* When sorting by vote count, display persons above electoral divisor first */}
+                                        {sortResultsByVoteCount && [...position.persons]
+                                            .sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
                                             .filter(person => countVotes(position, person.key) >= electoralDivisor(position))
                                             .map((person) => (
                                                 <ListItem disableGutters key={person.key}>
@@ -235,10 +245,9 @@ export function Results() {
                                             </Box>
                                         )}
 
-                                        {/* Below electoral divisor */}
-                                        {(sortResultsByVoteCount 
-                                            ? [...position.persons].sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
-                                            : position.persons)
+                                        {/* When sorting by vote count, display persons below electoral divisor after the divider */}
+                                        {sortResultsByVoteCount && [...position.persons]
+                                            .sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
                                             .filter(person => countVotes(position, person.key) < electoralDivisor(position))
                                             .map((person) => (
                                                 <ListItem disableGutters key={person.key}>
