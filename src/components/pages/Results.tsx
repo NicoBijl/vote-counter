@@ -9,7 +9,7 @@ import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 import Divider from "@mui/material/Divider";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip} from "recharts";
 
 export function Results() {
     const {positions} = usePositionsStore()
@@ -145,13 +145,11 @@ export function Results() {
         const total = personVotes.reduce((sum, entry) => sum + entry.value, 0) + blank + invalid;
 
         // Add total to each entry
-        const result = [
-            ...personVotes.map(entry => ({ ...entry, total })),
-            { name: 'Blank', value: blank, color: '#9e9e9e', total },
-            { name: 'Invalid', value: invalid, color: '#f44336', total }
+        return [
+            ...personVotes.map(entry => ({...entry, total})),
+            {name: 'Blank', value: blank, color: '#9e9e9e', total},
+            {name: 'Invalid', value: invalid, color: '#f44336', total}
         ];
-
-        return result;
     }
 
     // Colors for the pie chart - generate a color palette with enough colors for persons plus blank/invalid
