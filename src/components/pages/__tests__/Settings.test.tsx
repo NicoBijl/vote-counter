@@ -17,7 +17,8 @@ const initialBallotState = {
     nextVote: jest.fn(),
     previousVote: jest.fn(),
     setVoteIndex: jest.fn(),
-    setBallotVote: jest.fn()
+    setBallotVote: jest.fn(),
+    importBallots: jest.fn()
 };
 
 const initialSettingsState = {
