@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BallotPosition, BallotPositionProps } from '../Votes';
 import { Position } from '../../../types';
-import { expect, jest, describe, it } from '@jest/globals';
+import '@testing-library/jest-dom';
 
 describe('BallotPosition', () => {
     const mockPosition: Position = {

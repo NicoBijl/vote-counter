@@ -1,12 +1,35 @@
 import '@testing-library/jest-dom';
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 import { jest, beforeEach } from '@jest/globals';
 
+// Make TypeScript aware of jest-dom matchers
 declare global {
   namespace jest {
-    interface Matchers<R = void> extends TestingLibraryMatchers<typeof expect.stringContaining, R> {}
+    interface Matchers<R> {
+      toBeInTheDocument(): R;
+      toBeDisabled(): R;
+      toBeEnabled(): R;
+      toBeEmpty(): R;
+      toBeEmptyDOMElement(): R;
+      toBeInvalid(): R;
+      toBeRequired(): R;
+      toBeValid(): R;
+      toBeVisible(): R;
+      toContainElement(element: Element | null): R;
+      toContainHTML(htmlText: string): R;
+      toHaveAttribute(attr: string, value?: string): R;
+      toHaveClass(...classNames: string[]): R;
+      toHaveFocus(): R;
+      toHaveFormValues(expectedValues: Record<string, any>): R;
+      toHaveStyle(css: string | Record<string, any>): R;
+      toHaveTextContent(text: string | RegExp, options?: {normalizeWhitespace: boolean}): R;
+      toHaveValue(value?: string | string[] | number): R;
+      toBeChecked(): R;
+      toBePartiallyChecked(): R;
+      toHaveDescription(text?: string | RegExp): R;
+    }
   }
 }
+
 
 // Mock zustand/middleware
 /* eslint-disable @typescript-eslint/no-explicit-any */
