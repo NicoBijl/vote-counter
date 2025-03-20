@@ -10,9 +10,29 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: npm ci && npm run test && npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test -- --json --outputFile=jest-results.json
+        continue-on-error: true
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Jest Tests
+          path: jest-results.json
+          reporter: jest-json
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
         with:
