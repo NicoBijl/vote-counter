@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { Dashboard } from '../Dashboard';
-import { expect, describe, it } from '@jest/globals';
+import '@testing-library/jest-dom';
 
 describe('Dashboard', () => {
     it('renders welcome message', () => {

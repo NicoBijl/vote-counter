@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Results } from '../Results';
 import { Position, Ballot } from '../../../types';
-import { expect, jest, describe, it, beforeEach } from '@jest/globals';
+import '@testing-library/jest-dom';
 import React from 'react';
 
 // Create store states

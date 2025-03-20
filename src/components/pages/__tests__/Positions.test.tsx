@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Positions } from '../Positions';
 import { Position } from '../../../types';
 import { convertLegacyPositions } from '../../../utils/positionUtils';
-import { expect, jest, describe, it, beforeEach, afterEach } from '@jest/globals';
+import '@testing-library/jest-dom';
 
 // Mock the store
 const mockStore = {
