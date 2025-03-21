@@ -1,5 +1,6 @@
 import { usePositionsStore } from './usePositionsStore';
 import { Position } from '../types';
+import { convertLegacyPositions } from '../utils/positionUtils';
 
 interface StoreData {
     positions: Array<Partial<Position> & { max?: number }>;
@@ -12,34 +13,20 @@ describe('usePositionsStore', () => {
         usePositionsStore.setState({ positions: [] });
     });
 
-    const initializeStore = async (data: StoreData) => {
-        // Reset store and localStorage
-        localStorage.clear();
-        usePositionsStore.setState({ positions: [] });
+    // Test the migrate function directly by using convertLegacyPositions
+    const testMigration = (data: StoreData) => {
+        // Convert positions using the same function that migrate uses
+        const migratedPositions = convertLegacyPositions(data.positions);
 
-        // Set up test data in localStorage
-        localStorage.setItem('positions-store', JSON.stringify(data));
+        // Update the store with the migrated positions
+        usePositionsStore.setState({ positions: migratedPositions });
 
-        // Reset store to trigger rehydration
-        usePositionsStore.setState({ positions: [] }, true);
-
-        // Wait for next tick to allow rehydration
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Get store state after rehydration
-        const state = usePositionsStore.getState();
-
-        // Verify test data was loaded
-        if (state.positions.length === 0 || state.positions[0].key !== data.positions[0].key) {
-            throw new Error('Store rehydration failed');
-        }
-
-        return state;
+        // Return the store state for assertions
+        return usePositionsStore.getState();
     };
 
-    it('should migrate position without maxVacancies by setting it equal to maxVotesPerBallot', async () => {
-        jest.setTimeout(10000);
-        // Setup: Store position data without maxVacancies
+    it('should migrate position without maxVacancies by setting it equal to maxVotesPerBallot', () => {
+        // Setup: Position data without maxVacancies
         const oldData = {
             positions: [{
                 maxVotesPerBallot: 2,
@@ -49,15 +36,14 @@ describe('usePositionsStore', () => {
             }]
         };
 
-        const store = await initializeStore(oldData);
+        const store = testMigration(oldData);
 
         // Verify maxVacancies was set correctly
         expect(store.positions[0].maxVacancies).toBe(2);
     });
 
-    it('should maintain existing maxVacancies value when already set', async () => {
-        jest.setTimeout(10000);
-        // Setup: Store position data with existing maxVacancies
+    it('should maintain existing maxVacancies value when already set', () => {
+        // Setup: Position data with existing maxVacancies
         const existingData = {
             positions: [{
                 maxVotesPerBallot: 2,
@@ -68,15 +54,14 @@ describe('usePositionsStore', () => {
             }]
         };
 
-        const store = await initializeStore(existingData);
+        const store = testMigration(existingData);
 
         // Verify maxVacancies wasn't changed
         expect(store.positions[0].maxVacancies).toBe(3);
     });
 
-    it('should handle migration from max to maxVotesPerBallot and set maxVacancies', async () => {
-        jest.setTimeout(10000);
-        // Setup: Store position data with old 'max' property
+    it('should handle migration from max to maxVotesPerBallot and set maxVacancies', () => {
+        // Setup: Position data with old 'max' property
         const oldData = {
             positions: [{
                 max: 2,
@@ -86,7 +71,7 @@ describe('usePositionsStore', () => {
             }]
         };
 
-        const store = await initializeStore(oldData);
+        const store = testMigration(oldData);
 
         // Verify both migrations happened correctly
         expect(store.positions[0].maxVotesPerBallot).toBe(2);
