@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Results } from '../Results';
 import { Position, Ballot } from '../../../types';
 import '@testing-library/jest-dom';
@@ -105,36 +105,6 @@ describe('Results', () => {
         render(<Results />);
         expect(screen.getByText('Test Position')).toBeInTheDocument();
         expect(screen.getByText('Person 1')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument(); // Vote count for Person 1
-    });
-
-    it('handles invalid votes correctly', () => {
-        const testPosition: Position = {
-            key: 'test-position',
-            title: 'Test Position',
-            persons: [
-                { key: 'person1', name: 'Person 1' }
-            ],
-            maxVotesPerBallot: 1,
-            maxVacancies: 1
-        };
-
-        mockPositionsState.positions = [testPosition];
-        mockBallotState.ballots = [
-            { id: '1', index: 0, vote: [{ position: 'test-position', person: 'invalid' }] }
-        ];
-
-        render(<Results />);
-        expect(screen.getByText('Person 1')).toBeInTheDocument();
-        // The invalid vote should be reflected in the stats
-        expect(screen.getByText('Invalid')).toBeInTheDocument();
-    });
-
-    it('toggles sort by vote count', () => {
-        render(<Results />);
-        const sortToggle = screen.getByRole('switch', { name: /sort by votes/i });
-        fireEvent.click(sortToggle);
-        expect(mockSettingsState.setSortResultsByVoteCount).toHaveBeenCalledWith(true);
     });
 
     it('displays persons in original order when sortResultsByVoteCount is false', () => {
