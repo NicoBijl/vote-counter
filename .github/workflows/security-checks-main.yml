@@ -32,7 +32,7 @@ jobs:
           scan-type: 'fs'
           scan-ref: '.'
           ignore-unfixed: true
-          format: table
+          format: "table,sarif"
           severity: 'CRITICAL'
           exit-code: 0
 
