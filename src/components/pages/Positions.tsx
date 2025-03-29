@@ -9,8 +9,20 @@ import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 
 
 export function Positions() {
-    const {positions} = usePositionsStore()
+    const {positions, setPositions} = usePositionsStore();
 
+    function savePositionField(positionKey: PositionKey, field: string, value: string | number) {
+        const newPositions = positions.map(position => {
+            if (position.key === positionKey) {
+                return {
+                    ...position,
+                    [field]: field === 'maxVotesPerBallot' || field === 'maxVacancies' ? Number(value) : value
+                };
+            }
+            return position;
+        });
+        setPositions(newPositions);
+    }
 
     function savePersonKey(positionKey: PositionKey, personKey: PersonKey, newName: string) {
         console.log('savePersonKey', positionKey, personKey, newName)
@@ -33,9 +45,44 @@ export function Positions() {
                             <Paper sx={{p: 1, mb: 2, width: "100%", height: "100%"}} elevation={3}>
                                 <Typography variant="h4" marginBottom={2}>{position.title}</Typography>
 
-                                <TextField label="Key" name="positionKey" defaultValue={position.key}/>
-                                <TextField label="Title" name="positionTitle" defaultValue={position.title}/>
-                                <TextField label="Max" name="positionMax" defaultValue={position.max} type={"number"}/>
+                                <TextField 
+                                    label="Key" 
+                                    name="positionKey" 
+                                    defaultValue={position.key}
+                                    helperText="Unique identifier for this position. Used internally and should not be changed after voting has started."
+                                    fullWidth
+                                    margin="normal"
+                                    onChange={(event) => savePositionField(position.key, 'key', event.target.value)}
+                                />
+                                <TextField 
+                                    label="Title" 
+                                    name="positionTitle" 
+                                    defaultValue={position.title}
+                                    helperText="The display name of this position shown to users."
+                                    fullWidth
+                                    margin="normal"
+                                    onChange={(event) => savePositionField(position.key, 'title', event.target.value)}
+                                />
+                                <TextField 
+                                    label="Max Votes Per Ballot" 
+                                    name="positionMaxVotesPerBallot" 
+                                    defaultValue={position.maxVotesPerBallot} 
+                                    type={"number"}
+                                    helperText="Maximum number of votes a voter can cast for this position on a single ballot."
+                                    fullWidth
+                                    margin="normal"
+                                    onChange={(event) => savePositionField(position.key, 'maxVotesPerBallot', event.target.value)}
+                                />
+                                <TextField 
+                                    label="Max Vacancies" 
+                                    name="positionMaxVacancies" 
+                                    defaultValue={position.maxVacancies} 
+                                    type={"number"}
+                                    helperText="Number of positions to be filled. This determines how many candidates can be elected."
+                                    fullWidth
+                                    margin="normal"
+                                    onChange={(event) => savePositionField(position.key, 'maxVacancies', event.target.value)}
+                                />
                                 <Divider sx={{mt: 2}} variant="middle"></Divider>
                                 <Typography variant="h5" marginTop={2}>Persons</Typography>
 
@@ -45,10 +92,16 @@ export function Positions() {
                                             <TextField
                                                 label="Key"
                                                 defaultValue={person.key}
+                                                helperText="Unique identifier for this person. Used internally and should not be changed after voting has started."
+                                                fullWidth
+                                                margin="normal"
                                                 onChange={(event) => savePersonKey(position.key, person.key, event.target.value)}/>
                                             <TextField
-                                                label="Label"
+                                                label="Name"
                                                 defaultValue={person.name}
+                                                helperText="The display name of this person shown on ballots and results."
+                                                fullWidth
+                                                margin="normal"
                                                 onChange={(event) => savePersonName(position.key, person.key, event.target.value)}/>
                                         </Paper>
                                     ))}

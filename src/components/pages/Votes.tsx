@@ -8,7 +8,8 @@ import {
     DialogContentText,
     DialogTitle,
     FormControlLabel,
-    Pagination
+    Pagination,
+    Tooltip
 } from "@mui/material";
 import {PersonKey, Position, PositionKey} from "../../types.ts";
 import {ChangeEvent, useEffect, useRef, useState} from "react";
@@ -21,7 +22,7 @@ import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useHotkeys} from "react-hotkeys-hook";
 
-interface BallotPositionProps {
+export interface BallotPositionProps {
     position: Position,
     positionTabIndex: number,
     focussed: boolean,
@@ -85,7 +86,7 @@ export function BallotPosition({
             <Grid alignItems="center" container>
                 <Grid item xs={2}></Grid>
                 <Grid item xs={"auto"}>
-                    <Typography variant="subtitle2">Max: {position.max}</Typography>
+                    <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
                 </Grid>
             </Grid>
 
@@ -119,9 +120,9 @@ export function BallotPosition({
                     <FormControlLabel
                         control={
                             <Checkbox color={"error"}
-                                tabIndex={getNextPersonTabIndex()}
-                                onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
-                                checked={isChecked(position.key, "invalid")}
+                                      tabIndex={getNextPersonTabIndex()}
+                                      onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
+                                      checked={isChecked(position.key, "invalid")}
                             />
                         }
                         label="Invalid"/>
@@ -164,6 +165,7 @@ export function Votes() {
     useEffect(() => {
         console.log("currentBallotIndex updated")
         setFocusPosition(positions[0]);
+        setIsDialogOpen(false);
     }, [currentBallotIndex]);
 
 
@@ -181,12 +183,8 @@ export function Votes() {
             toggleChecked(focusPosition!, "invalid");
         }, {enableOnFormTags: true}
     )
-    useHotkeys("Enter", () => {
-        if (isDialogOpen) {
-            remove()
-        } else {
-            nextVote()
-        }
+    useHotkeys("n", () => {
+        nextVote()
     }, {enableOnFormTags: true})
 
     useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
@@ -198,6 +196,10 @@ export function Votes() {
     useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
     useHotkeys("ArrowRight", focusNextPosition, {enableOnFormTags: true})
     useHotkeys("Backspace", openRemoveConfirmationDialog, {enableOnFormTags: true})
+    useHotkeys("Escape", () => {
+            setIsDialogOpen(false);
+        }, {enableOnFormTags: true}
+    )
 
     function toggleChecked(position: Position, personKey: PersonKey) {
         console.log("Toggle", position, personKey, currentVote)
@@ -220,7 +222,7 @@ export function Votes() {
     }
 
     function maxReached(positionKey: PositionKey): boolean {
-        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.max)
+        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
     }
 
     function getNextPositionTabIndex() {
@@ -229,10 +231,14 @@ export function Votes() {
     }
 
     function openRemoveConfirmationDialog() {
-        if (currentBallotIndex == 0) {
-            return // first ballot can't be removed
+        if (isDialogOpen) {
+            remove();
+        } else {
+            if (currentBallotIndex == 0) {
+                return // first ballot can't be removed
+            }
+            setIsDialogOpen(true);
         }
-        setIsDialogOpen(true);
     }
 
     function handleDialogClose() {
@@ -267,13 +273,17 @@ export function Votes() {
             </Dialog>
             <Grid container spacing={1} alignItems={"stretch"}>
                 <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
-                    <Button variant="outlined" sx={{height: '100%', width: '100%'}}
-                            aria-label="previous vote"
-                            tabIndex={500}
-                            disabled={currentBallotIndex == 0}
-                            onClick={previousVote}>
-                        <KeyboardArrowLeftIcon/>
-                    </Button>
+                    <Tooltip title="Previous vote (Up arrow)">
+                        <span>
+                            <Button variant="outlined" sx={{height: '100%', width: '100%'}}
+                                    aria-label="previous vote"
+                                    tabIndex={500}
+                                    disabled={currentBallotIndex == 0}
+                                    onClick={previousVote}>
+                                <KeyboardArrowLeftIcon/>
+                            </Button>
+                        </span>
+                    </Tooltip>
                 </Grid>
                 <Grid item xs>
                     <Grid item container>
@@ -297,30 +307,40 @@ export function Votes() {
                             ></BallotPosition>
                         )}
                         <Grid item container xs={12} justifyContent="space-evenly">
-                            <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
-                                    tabIndex={2000}
-                            >
-                                Next Ballot
-                            </Button>
-                            <Button disabled={currentBallotIndex == 0}
-                                    onClick={openRemoveConfirmationDialog}
-                                    variant="outlined" color="error"
-                                    sx={{mt: 2, mb: 2}}
-                                    tabIndex={2000}
-                            >
-                                Remove Ballot
-                            </Button>
+                            <Tooltip title="Next ballot (N)">
+                                <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
+                                        tabIndex={2000}
+                                >
+                                    Next Ballot
+                                </Button>
+                            </Tooltip>
+                            <Tooltip title="Remove ballot (Backspace)">
+                                <span>
+                                    <Button disabled={currentBallotIndex == 0}
+                                            onClick={openRemoveConfirmationDialog}
+                                            variant="outlined" color="error"
+                                            sx={{mt: 2, mb: 2}}
+                                            tabIndex={2000}
+                                    >
+                                        Remove Ballot
+                                    </Button>
+                                </span>
+                            </Tooltip>
 
                         </Grid>
                     </Grid>
                 </Grid>
                 <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
-                    <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
-                            aria-label="next vote"
-                            onClick={nextVote}
-                            disabled={currentBallotIndex == ballots.length - 1}>
-                        <KeyboardArrowRightIcon/>
-                    </Button>
+                    <Tooltip title="Next vote (Down arrow or N)">
+                        <span>
+                            <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
+                                    aria-label="next vote"
+                                    onClick={nextVote}
+                                    disabled={currentBallotIndex == ballots.length - 1}>
+                                <KeyboardArrowRightIcon/>
+                            </Button>
+                        </span>
+                    </Tooltip>
                 </Grid>
 
                 <Grid item xs={12} alignContent="stretch">
