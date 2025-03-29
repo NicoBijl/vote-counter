@@ -68,7 +68,9 @@ jest.mock('recharts', () => {
         PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
         Pie: () => <div data-testid="pie"></div>,
         Cell: () => <div data-testid="cell"></div>,
-        Tooltip: () => <div data-testid="tooltip"></div>
+        Tooltip: () => <div data-testid="tooltip"></div>,
+        // Add mock for text element to prevent the "unrecognized tag" warning
+        text: ({ children }: { children: React.ReactNode }) => <div data-testid="text">{children}</div>
     };
 });
 

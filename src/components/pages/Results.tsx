@@ -10,6 +10,7 @@ import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 import Divider from "@mui/material/Divider";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip} from "recharts";
+import {calculateElectoralDivisor, CandidateStatus, countVotes, getCandidateStatus} from "../../domain/electionDomain.ts";
 
 export function Results() {
     const {positions} = usePositionsStore()
@@ -43,16 +44,14 @@ export function Results() {
     }
 
     function electoralDivisor(position: Position): number {
-        const persons = position.persons.length
-        const validVotes = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person != "invalid").length
-        return Math.ceil(validVotes / persons * electoralDivisorVariable)
+        return calculateElectoralDivisor(position, ballots, electoralDivisorVariable);
     }
 
     function countVotesForPositions(positions: Position[]): number[] {
         return positions.flatMap(position => {
             const persons = position.persons ?? [];
-            const votesPerPerson = persons.map(person => countVotes(position, person.key));
-            return votesPerPerson.concat([countVotes(position, 'invalid')]);
+            const votesPerPerson = persons.map(person => countVotes(position, person.key, ballots));
+            return votesPerPerson.concat([countVotes(position, 'invalid', ballots)]);
         });
     }
 
@@ -74,38 +73,18 @@ export function Results() {
         console.log("totalChecksum", allVotesCounted, checksum(allVotesCounted));
         return checksum(allVotesCounted);
     }
-
-    function countVotes(position: Position, personKey: PersonKey): number {
-        const checked = ballots.flatMap(b => b.vote).filter(v => v.position == position.key && v.person == personKey).length
-        return personKey == 'invalid' ? checked * position.maxVotesPerBallot : checked;
-    }
-
-    function getTopCandidates(position: Position): PersonKey[] {
-        return position.persons
-            .map(person => ({ key: person.key, votes: countVotes(position, person.key) }))
-            .sort((a, b) => b.votes - a.votes)
-            .slice(0, position.maxVacancies)
-            .map(candidate => candidate.key);
-    }
-
     function chipColor(position: Position, personKey: PersonKey): { color: 'success' | 'default', variant?: 'outlined' } {
-        if (personKey === 'invalid') {
-            return { color: 'default' };
-        }
+        const status = getCandidateStatus(position, personKey, ballots, electoralDivisorVariable);
 
-        const votes = countVotes(position, personKey);
-        const divisor = electoralDivisor(position);
-        const topCandidates = getTopCandidates(position);
-
-        if (votes >= divisor) {
-            if (topCandidates.includes(personKey)) {
+        switch (status) {
+            case CandidateStatus.ELECTED:
                 return { color: 'success' };
-            } else {
+            case CandidateStatus.ABOVE_DIVISOR:
                 return { color: 'success', variant: 'outlined' };
-            }
+            case CandidateStatus.BELOW_DIVISOR:
+            default:
+                return { color: 'default' };
         }
-
-        return { color: 'default' };
     }
 
     function blankVotes(positionKey: PositionKey): number {
@@ -133,12 +112,12 @@ export function Results() {
         // Get vote counts for each person
         const personVotes = position.persons.map(person => ({
             name: person.name,
-            value: countVotes(position, person.key),
+            value: countVotes(position, person.key, ballots),
             key: person.key
         }));
 
         // Add blank and invalid
-        const invalid = countVotes(position, "invalid");
+        const invalid = countVotes(position, "invalid", ballots);
         const blank = blankVotes(position.key);
 
         // Calculate total
@@ -207,37 +186,46 @@ export function Results() {
                                     <List>
                                         {/* When not sorting by vote count, display all persons in original order */}
                                         {!sortResultsByVoteCount && position.persons.map((person) => (
-                                            <ListItem disableGutters key={person.key}>
+                                            <ListItem 
+                                                disableGutters 
+                                                key={person.key} 
+                                                data-testid={`person-item-${position.key}-${person.key}`}>
                                                 <Chip 
-                                                      label={countVotes(position, person.key)}
+                                                      label={countVotes(position, person.key, ballots)}
                                                       {...chipColor(position, person.key)}
-                                                      sx={{mr: 2}}/>
+                                                      sx={{mr: 2}}
+                                                      data-testid={`person-chip-${position.key}-${person.key}`}/>
                                                 <ListItemText>{person.name}</ListItemText>
                                             </ListItem>
                                         ))}
 
                                         {/* When sorting by vote count, display persons above electoral divisor first */}
                                         {sortResultsByVoteCount && [...position.persons]
-                                            .sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
-                                            .filter(person => countVotes(position, person.key) >= electoralDivisor(position))
+                                            .sort((p1, p2) => countVotes(position, p2.key, ballots) - countVotes(position, p1.key, ballots))
+                                            .filter(person => countVotes(position, person.key, ballots) >= electoralDivisor(position))
                                             .map((person) => (
-                                                <ListItem disableGutters key={person.key}>
+                                                <ListItem 
+                                                    disableGutters 
+                                                    key={person.key}
+                                                    data-testid={`person-item-sorted-above-${position.key}-${person.key}`}>
                                                     <Chip 
-                                                          label={countVotes(position, person.key)}
+                                                          label={countVotes(position, person.key, ballots)}
                                                           {...chipColor(position, person.key)}
-                                                          sx={{mr: 2}}/>
+                                                          sx={{mr: 2}}
+                                                          data-testid={`person-chip-sorted-above-${position.key}-${person.key}`}/>
                                                     <ListItemText>{person.name}</ListItemText>
                                                 </ListItem>
                                             ))}
 
                                         {/* Electoral Divisor Display */}
                                         {sortResultsByVoteCount && (
-                                            <Box sx={{ position: 'relative', my: 4 }}>
+                                            <Box sx={{ position: 'relative', my: 4 }} data-testid={`electoral-divisor-container-${position.key}`}>
                                                 <Divider>
                                                     <Chip 
                                                         label={`Electoral Divisor: ${electoralDivisor(position)}`}
                                                         size="small"
                                                         variant="outlined"
+                                                        data-testid={`electoral-divisor-chip-${position.key}`}
                                                     />
                                                 </Divider>
                                             </Box>
@@ -245,14 +233,18 @@ export function Results() {
 
                                         {/* When sorting by vote count, display persons below electoral divisor after the divider */}
                                         {sortResultsByVoteCount && [...position.persons]
-                                            .sort((p1, p2) => countVotes(position, p2.key) - countVotes(position, p1.key))
-                                            .filter(person => countVotes(position, person.key) < electoralDivisor(position))
+                                            .sort((p1, p2) => countVotes(position, p2.key, ballots) - countVotes(position, p1.key, ballots))
+                                            .filter(person => countVotes(position, person.key, ballots) < electoralDivisor(position))
                                             .map((person) => (
-                                                <ListItem disableGutters key={person.key}>
+                                                <ListItem 
+                                                    disableGutters 
+                                                    key={person.key}
+                                                    data-testid={`person-item-sorted-below-${position.key}-${person.key}`}>
                                                     <Chip 
-                                                          label={countVotes(position, person.key)}
+                                                          label={countVotes(position, person.key, ballots)}
                                                           {...chipColor(position, person.key)}
-                                                          sx={{mr: 2}}/>
+                                                          sx={{mr: 2}}
+                                                          data-testid={`person-chip-sorted-below-${position.key}-${person.key}`}/>
                                                     <ListItemText>{person.name}</ListItemText>
                                                 </ListItem>
                                             ))}
