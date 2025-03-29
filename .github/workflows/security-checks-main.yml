@@ -32,10 +32,20 @@ jobs:
           scan-type: 'fs'
           scan-ref: '.'
           ignore-unfixed: true
-          format: "table,sarif"
+          format: "table"
           severity: 'CRITICAL'
           exit-code: 0
 
+      - name: Run Trivy vulnerability scanner in repo mode, output sarif
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL'
+          skip-setup-trivy: true
+          exit-code: 0
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
