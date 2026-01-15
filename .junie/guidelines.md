@@ -1,7 +1,7 @@
-# Vote Counter 2 Project Guidelines
+# Vote Counter Project Guidelines
 
 ## Project Overview
-Vote Counter 2 is a sophisticated ballot counting application designed to streamline and secure the voting process. The application focuses on accuracy, transparency, and user accessibility in managing and counting votes for various positions.
+Vote Counter is a sophisticated ballot counting application designed to streamline and secure the voting process. The application focuses on accuracy, transparency, and user accessibility in managing and counting votes for various positions.
 
 ### Core Features
 - **Real-time Vote Counting**: Instant vote tallying with live updates
@@ -33,6 +33,7 @@ Vote Counter 2 is a sophisticated ballot counting application designed to stream
 ### Testing Requirements
 - Unit tests for core functionality
 - Integration tests for critical flows
+- E2E tests: use `npm run test:e2e:cli:chrome` when running automated tests (especially for AI/CLI environments)
 - Accessibility testing
 - Cross-device compatibility testing
 
