@@ -211,4 +211,224 @@ describe('Results', () => {
         expect(personItems[2].textContent).toContain('Person 1');
         expect(personItems[2].textContent).toContain('1'); // Vote count
     });
+
+    it('correctly identifies candidate status for elected candidates', () => {
+        // Create a position with 4 candidates and 2 vacancies
+        const testPosition: Position = {
+            key: 'test-position',
+            title: 'Test Position',
+            persons: [
+                { key: 'person1', name: 'Person 1' },
+                { key: 'person2', name: 'Person 2' },
+                { key: 'person3', name: 'Person 3' },
+                { key: 'person4', name: 'Person 4' }
+            ],
+            maxVotesPerBallot: 1,
+            maxVacancies: 2
+        };
+
+        // Create ballots with votes: person1 (10), person2 (8), person3 (8), person4 (5)
+        const ballots: Ballot[] = [];
+
+        // 10 votes for person1
+        for (let i = 0; i < 10; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person1'}]
+            });
+        }
+
+        // 8 votes for person2 and person3
+        for (let i = 0; i < 8; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person2'}]
+            });
+
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person3'}]
+            });
+        }
+
+        // 5 votes for person4
+        for (let i = 0; i < 5; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person4'}]
+            });
+        }
+
+        mockPositionsState.positions = [testPosition];
+        mockBallotState.ballots = ballots;
+
+        // Set electoral divisor variable to make the divisor 7
+        // With 31 votes total and 4 persons, the divisor would be 31/4*0.8 = 6.2, rounded up to 7
+        mockSettingsState.electoralDivisorVariable = 0.8;
+        mockSettingsState.sortResultsByVoteCount = true;
+
+        render(<Results />);
+
+        // Should have an electoral divisor display
+        expect(screen.getByText(/Electoral Divisor: 7/)).toBeInTheDocument();
+
+        // Verify the person list items are correctly ordered and have the proper status indicators
+        const listItems = screen.getAllByRole('listitem');
+        
+        // Find all person items (they will have vote counts in the text)
+        const personItems = listItems.filter(item => 
+            item.textContent?.includes('Person 1') || 
+            item.textContent?.includes('Person 2') || 
+            item.textContent?.includes('Person 3') ||
+            item.textContent?.includes('Person 4')
+        );
+
+        // Person items should be sorted by vote count:
+        // Person 1 (10 votes) - Elected
+        // Person 2 (8 votes) - Above divisor 
+        // Person 3 (8 votes) - Above divisor
+        // Person 4 (5 votes) - Below divisor
+        expect(personItems[0].textContent).toContain('Person 1');
+        expect(personItems[0].textContent).toContain('10'); // vote count
+    });
+
+    it('correctly identifies candidate status for candidates above divisor', () => {
+        const testPosition: Position = {
+            key: 'test-position',
+            title: 'Test Position',
+            persons: [
+                { key: 'person1', name: 'Person 1' },
+                { key: 'person2', name: 'Person 2' },
+                { key: 'person3', name: 'Person 3' },
+                { key: 'person4', name: 'Person 4' }
+            ],
+            maxVotesPerBallot: 1,
+            maxVacancies: 1
+        };
+
+        // Create ballots with votes:
+        // person1 (10), person2 (8), person3 (8), person4 (5)
+        const ballots: Ballot[] = [];
+
+        // 10 votes for person1
+        for (let i = 0; i < 10; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person1'}]
+            });
+        }
+
+        // 8 votes for person2 and person3
+        for (let i = 0; i < 8; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person2'}]
+            });
+
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person3'}]
+            });
+        }
+
+        // 5 votes for person4
+        for (let i = 0; i < 5; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person4'}]
+            });
+        }
+
+        mockPositionsState.positions = [testPosition];
+        mockBallotState.ballots = ballots;
+
+        // Set electoral divisor variable to make the divisor 7
+        mockSettingsState.electoralDivisorVariable = 0.8;
+        mockSettingsState.sortResultsByVoteCount = true;
+
+        render(<Results />);
+
+        // Should have an electoral divisor display
+        expect(screen.getByText(/Electoral Divisor: 7/)).toBeInTheDocument();
+
+        // Person 1 should be ELECTED (has more votes than divisor and is in top candidates)
+        expect(screen.getByTestId('person-chip-sorted-above-test-position-person1')).toBeInTheDocument();
+        
+        // Person 2 and 3 should be ABOVE_DIVISOR (has more votes than divisor but not in top candidates)
+        expect(screen.getByTestId('person-chip-sorted-above-test-position-person2')).toBeInTheDocument();
+        expect(screen.getByTestId('person-chip-sorted-above-test-position-person3')).toBeInTheDocument();
+        
+        // Person 4 should be BELOW_DIVISOR (has fewer votes than divisor)
+        expect(screen.getByTestId('person-chip-sorted-below-test-position-person4')).toBeInTheDocument();
+    });
+
+    it('correctly identifies candidate status for candidates below divisor', () => {
+        const testPosition: Position = {
+            key: 'test-position',
+            title: 'Test Position',
+            persons: [
+                { key: 'person1', name: 'Person 1' },
+                { key: 'person2', name: 'Person 2' },
+                { key: 'person3', name: 'Person 3' }
+            ],
+            maxVotesPerBallot: 1,
+            maxVacancies: 1
+        };
+
+        // Create ballots with votes:
+        // person1 (1), person2 (3), person3 (2)
+        const ballots: Ballot[] = [];
+
+        // 1 vote for person1
+        ballots.push({
+            id: 'ballot-1',
+            index: 0,
+            vote: [{position: 'test-position', person: 'person1'}]
+        });
+
+        // 3 votes for person2
+        for (let i = 0; i < 3; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person2'}]
+            });
+        }
+
+        // 2 votes for person3
+        for (let i = 0; i < 2; i++) {
+            ballots.push({
+                id: `ballot-${ballots.length}`,
+                index: ballots.length,
+                vote: [{position: 'test-position', person: 'person3'}]
+            });
+        }
+
+        mockPositionsState.positions = [testPosition];
+        mockBallotState.ballots = ballots;
+
+        // Set electoral divisor variable to make the divisor 2
+        mockSettingsState.electoralDivisorVariable = 0.8;
+        mockSettingsState.sortResultsByVoteCount = true;
+
+        render(<Results />);
+
+        // Check for the electoral divisor display
+        expect(screen.getByText(/Electoral Divisor: 2/)).toBeInTheDocument();
+
+        // Person 1 should be BELOW_DIVISOR (has fewer votes than divisor)
+        expect(screen.getByTestId('person-chip-sorted-below-test-position-person1')).toBeInTheDocument();
+        
+        // Person 2 and 3 should be ABOVE_DIVISOR (have more votes than divisor)
+        expect(screen.getByTestId('person-chip-sorted-above-test-position-person2')).toBeInTheDocument();
+        expect(screen.getByTestId('person-chip-sorted-above-test-position-person3')).toBeInTheDocument();
+    });
 });

@@ -94,6 +94,23 @@ src/
 - **Building**: Use `npm run build` to create a production build
 - **Linting**: Use `npm run lint` to check for code style issues
 
+## End-to-End Testing
+
+This project now includes Playwright end-to-end tests to verify core functionality:
+
+- **Voting Page**: Tests navigation to votes page, casting votes, and moving between ballots
+- **Results Page**: Tests navigation to results page and verification of data display
+
+To run E2E tests:
+```bash
+npm run test:e2e
+```
+
+For AI/CLI environments, use the following command to avoid opening the HTML report and run specifically on Chrome:
+```bash
+npm run test:e2e:cli:chrome
+```
+
 ## Todo:
 
 - **Results Enhancement**
