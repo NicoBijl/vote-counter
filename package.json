@@ -11,9 +11,9 @@
     "preview": "vite preview",
     "test": "jest --config jest.config.js",
     "test:e2e": "playwright test",
-    "test:e2e:cli": "PW_TEST_HTML_REPORT_OPEN='never'; playwright test",
+    "test:e2e:cli": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test",
     "test:e2e:chrome": "playwright test --project=chromium",
-    "test:e2e:cli:chrome": "PW_TEST_HTML_REPORT_OPEN='never'; playwright test --project=chromium"
+    "test:e2e:cli:chrome": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test --project=chromium"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -37,6 +37,7 @@
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
