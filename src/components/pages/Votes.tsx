@@ -39,10 +39,15 @@ export function BallotPosition({
                                    setFocusPosition,
                                    isChecked,
                                    setChecked,
-                                   maxReached
-                               }: BallotPositionProps) {
-    let tabIndex = positionTabIndex
+                                    maxReached
+                                }: BallotPositionProps) {
     const positionRef = useRef<HTMLInputElement | null>(null);
+
+    function changePositionFocus(position: Position) {
+        console.log('change focus to position with key: ', position.key)
+        setFocusPosition(position)
+        positionRef.current?.focus();
+    }
 
     useHotkeys(position.title[0], () => changePositionFocus(position), {enableOnFormTags: true})
 
@@ -56,52 +61,40 @@ export function BallotPosition({
         setFocusPosition(position);
     }
 
-    function getNextPersonTabIndex() {
-        tabIndex = tabIndex + 1
-        return tabIndex;
-    }
-
-    function changePositionFocus(position: Position) {
-        console.log('change focus to position with key: ', position.key)
-        setFocusPosition(position)
-        positionRef.current?.focus();
-    }
-
     return <>
-        <Grid item xs={6} sm={3} marginBottom={2} marginTop={2}
-              tabIndex={tabIndex}
+        <Grid size={{ xs: 6, sm: 3 }} sx={{ mb: 2, mt: 2, padding: ".6rem", borderRadius: ".3rem" }}
+              tabIndex={positionTabIndex}
               onFocus={onFocusPosition}
               className={focussed ? "focus" : ""}
               ref={positionRef}
-              sx={{padding: ".6rem", borderRadius: ".3rem"}}
         >
             <Grid alignItems="center" container>
-                <Grid item xs={2}>
+                <Grid size={2}>
                     <Chip label={position.title[0].toLowerCase()} variant="outlined"/>
                 </Grid>
-                <Grid item xs><Typography variant="h4">
+                <Grid size="grow"><Typography variant="h4">
                     {position.title}
                 </Typography></Grid>
             </Grid>
             <Grid alignItems="center" container>
-                <Grid item xs={2}></Grid>
-                <Grid item xs={"auto"}>
+                <Grid size={2}></Grid>
+                <Grid size="auto">
                     <Typography variant="subtitle2">Max votes per ballot: {position.maxVotesPerBallot}</Typography>
                 </Grid>
             </Grid>
 
             {position.persons.map((person, personIndex) => (
                 <Grid container key={person.key}>
-                    <Grid item xs={2}>
+                    <Grid size={2}>
                         {focussed &&
                             <Chip label={personIndex + 1} variant="outlined"/>
                         }
                     </Grid>
-                    <Grid item xs={"auto"}>
+                    <Grid size="auto">
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    tabIndex={getNextPersonTabIndex()}
+                                    tabIndex={positionTabIndex + personIndex + 1}
                                     onChange={(_event, checked) => setChecked(position.key, person.key, checked)}
                                     checked={isChecked(position.key, person.key)}
                                     disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
@@ -112,15 +105,15 @@ export function BallotPosition({
                 </Grid>
             ))}
             <Grid container>
-                <Grid item xs={2}>
+                <Grid size={2}>
                     {focussed &&
                         <Chip label={'i'} variant="outlined"/>
                     }</Grid>
-                <Grid item xs={"auto"}>
+                <Grid size="auto">
                     <FormControlLabel
                         control={
                             <Checkbox color={"error"}
-                                      tabIndex={getNextPersonTabIndex()}
+                                      tabIndex={positionTabIndex + position.persons.length + 1}
                                       onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
                                       checked={isChecked(position.key, "invalid")}
                             />
@@ -146,7 +139,6 @@ export function Votes() {
     const {positions} = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    let tabIndex = 1000
 
     function focusPreviousPosition() {
         if (focusPosition) {
@@ -166,7 +158,7 @@ export function Votes() {
         console.log("currentBallotIndex updated")
         setFocusPosition(positions[0]);
         setIsDialogOpen(false);
-    }, [currentBallotIndex]);
+    }, [currentBallotIndex, positions]);
 
 
     // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
@@ -225,11 +217,6 @@ export function Votes() {
         return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
     }
 
-    function getNextPositionTabIndex() {
-        tabIndex = (Math.floor(tabIndex / 100) * 100) + 100
-        return tabIndex;
-    }
-
     function openRemoveConfirmationDialog() {
         if (isDialogOpen) {
             remove();
@@ -272,7 +259,7 @@ export function Votes() {
                 </DialogActions>
             </Dialog>
             <Grid container spacing={1} alignItems={"stretch"}>
-                <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
+                <Grid size="auto" sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
                     <Tooltip title="Previous vote (Up arrow)">
                         <span>
                             <Button variant="outlined" sx={{height: '100%', width: '100%'}}
@@ -285,18 +272,18 @@ export function Votes() {
                         </span>
                     </Tooltip>
                 </Grid>
-                <Grid item xs>
-                    <Grid item container>
-                        <Grid item xs={12}>
+                <Grid size="grow">
+                    <Grid container>
+                        <Grid size={12}>
                             <Typography variant="h2" sx={{textAlign: "center"}}>Vote:
                                 # {currentBallotIndex + 1}</Typography>
                         </Grid>
 
 
-                        {positions.map((position) =>
+                        {positions.map((position, index) =>
                             <BallotPosition key={position.key}
                                             position={position}
-                                            positionTabIndex={getNextPositionTabIndex()}
+                                            positionTabIndex={1100 + (index * 100)}
                                             focussed={focusPosition?.key === position.key}
                                             setFocusPosition={(position) => {
                                                 setFocusPosition(position)
@@ -306,7 +293,7 @@ export function Votes() {
                                             maxReached={maxReached}
                             ></BallotPosition>
                         )}
-                        <Grid item container xs={12} justifyContent="space-evenly">
+                        <Grid container size={12} justifyContent="space-evenly">
                             <Tooltip title="Next ballot (N)">
                                 <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
                                         tabIndex={2000}
@@ -330,7 +317,7 @@ export function Votes() {
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
+                <Grid size="auto" sx={{display: {lg: 'none', xl: 'block'}, maxWidth: "150px"}}>
                     <Tooltip title="Next vote (Down arrow or N)">
                         <span>
                             <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
@@ -343,7 +330,7 @@ export function Votes() {
                     </Tooltip>
                 </Grid>
 
-                <Grid item xs={12} alignContent="stretch">
+                <Grid size={12} sx={{ alignContent: "stretch" }}>
                     <Pagination
                         count={Math.max(ballots.length, 1)}
                         color="primary"

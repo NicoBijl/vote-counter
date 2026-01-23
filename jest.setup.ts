@@ -3,6 +3,7 @@ import { jest, beforeEach } from '@jest/globals';
 
 // Make TypeScript aware of jest-dom matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeInTheDocument(): R;
@@ -19,8 +20,8 @@ declare global {
       toHaveAttribute(attr: string, value?: string): R;
       toHaveClass(...classNames: string[]): R;
       toHaveFocus(): R;
-      toHaveFormValues(expectedValues: Record<string, any>): R;
-      toHaveStyle(css: string | Record<string, any>): R;
+      toHaveFormValues(expectedValues: Record<string, unknown>): R;
+      toHaveStyle(css: string | Record<string, unknown>): R;
       toHaveTextContent(text: string | RegExp, options?: {normalizeWhitespace: boolean}): R;
       toHaveValue(value?: string | string[] | number): R;
       toBeChecked(): R;
@@ -32,11 +33,10 @@ declare global {
 
 
 // Mock zustand/middleware
-/* eslint-disable @typescript-eslint/no-explicit-any */
 jest.mock('zustand/middleware', () => ({
-  persist: (config: any, options: any) => (set: any, get: any) => {
+  persist: (config: (set: (state: unknown) => void, get: () => unknown) => unknown, options: { name: string; version: number; migrate?: (persistedState: unknown, version: number) => unknown; onRehydrateStorage?: () => (state: unknown) => void }) => (set: (state: unknown) => void, get: () => unknown) => {
     // Initialize with the config state
-    const state = config(set, get);
+    const state = config(set, get) as Record<string, unknown>;
 
     // Configure storage (we'll use localStorage directly in tests)
 
@@ -68,14 +68,15 @@ jest.mock('zustand/middleware', () => ({
 
     // Set up a subscription to persist state changes
     const originalSet = set;
-    set = (...args: any) => {
-      originalSet(...args);
+    const mockedSet = (nextState: unknown) => {
+      originalSet(nextState);
       const state = get();
       localStorage.setItem(options.name, JSON.stringify({
         state,
         version: options.version
       }));
     };
+    set = mockedSet;
 
     // Handle onRehydrateStorage
     if (options.onRehydrateStorage) {
@@ -98,18 +99,24 @@ jest.mock('zustand/middleware', () => ({
       }
     };
   },
-  createJSONStorage: (getStorage: any) => ({
+  createJSONStorage: (getStorage: () => Storage) => ({
     getItem: (name: string) => {
       const str = getStorage().getItem(name);
       return str ? JSON.parse(str) : null;
     },
-    setItem: (name: string, value: any) => {
+    setItem: (name: string, value: unknown) => {
       getStorage().setItem(name, JSON.stringify(value));
     },
     removeItem: (name: string) => {
       getStorage().removeItem(name);
     }
   })
+}));
+
+// Mock react-hotkeys-hook
+jest.mock('react-hotkeys-hook', () => ({
+  useHotkeys: jest.fn(),
+  isHotkeyPressed: jest.fn(),
 }));
 
 // Mock localStorage with a working implementation

@@ -146,7 +146,7 @@ export default function MainContainer() {
                 <Container maxWidth={false} sx={{mt: 4, mb: 4}}>
                     <Grid container>
                         {/* Chart */}
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                                 <Typography component="h1" variant="h3" color="primary"
                                             sx={{textTransform: "capitalize"}}>
                                     {page}
