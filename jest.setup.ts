@@ -113,6 +113,12 @@ jest.mock('zustand/middleware', () => ({
   })
 }));
 
+// Mock react-hotkeys-hook
+jest.mock('react-hotkeys-hook', () => ({
+  useHotkeys: jest.fn(),
+  isHotkeyPressed: jest.fn(),
+}));
+
 // Mock localStorage with a working implementation
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
