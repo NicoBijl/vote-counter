@@ -175,10 +175,10 @@ export function Results() {
                     />
                 </Box>
                 <Grid container>
-                    <Grid item container>
-                        <Grid item container>
+                    <Grid container>
+                        <Grid container>
                             {positions.map((position) => (
-                                <Grid item xs={6} sm={3} key={"votes-" + position.key}>
+                                <Grid size={{ xs: 6, sm: 3 }} key={"votes-" + position.key}>
                                     <Typography variant="h4">{position.title}</Typography>
                                     <Typography variant="subtitle2">
                                         Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
@@ -252,9 +252,9 @@ export function Results() {
                                 </Grid>
                             ))}
                         </Grid>
-                        <Grid item container>
+                        <Grid container>
                             {positions.map((position) => (
-                                <Grid item xs={6} sm={3} key={"rest-" + position.key}>
+                                <Grid size={{ xs: 6, sm: 3 }} key={"rest-" + position.key}>
                                     <Divider variant={"middle"}></Divider>
 
                                     {/* Vote Statistics Pie Chart */}
@@ -313,7 +313,7 @@ export function Results() {
                                 </Grid>
                             ))}
                         </Grid>
-                        <Grid item container sx={{pt: 4}}>
+                        <Grid container sx={{pt: 4}}>
                             <List>
                                 <ListItem>
                                     <Chip label={ballots.length} variant="outlined" sx={{mr: 2}}/>

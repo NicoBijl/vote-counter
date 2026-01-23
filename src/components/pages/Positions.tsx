@@ -38,10 +38,10 @@ export function Positions() {
                 Please update position keys only before vote registration. Changes made afterwards may
                 lead to malfunctions.
             </Alert>
-            <Grid item xs={12}>
-                <Grid item container spacing={2}>
+            <Grid size={12}>
+                <Grid container spacing={2}>
                     {positions.map((position) =>
-                        <Grid item sm={12} md={4} key={position.key} paddingBottom={2}>
+                        <Grid size={{ sm: 12, md: 4 }} key={position.key} sx={{ pb: 2 }}>
                             <Paper sx={{p: 1, mb: 2, width: "100%", height: "100%"}} elevation={3}>
                                 <Typography variant="h4" marginBottom={2}>{position.title}</Typography>
 

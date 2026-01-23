@@ -138,7 +138,7 @@ describe('Settings', () => {
 
     it('toggles sort by vote count', () => {
         render(<Settings />);
-        const toggle = screen.getByRole('checkbox');
+        const toggle = screen.getByRole('switch');
         fireEvent.click(toggle);
         expect(mockSettingsStore.setSortResultsByVoteCount).toHaveBeenCalledWith(false);
     });
