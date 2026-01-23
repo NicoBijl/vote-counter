@@ -126,6 +126,11 @@ npm run test:e2e:cli:chrome
 - **Audit Trails**: Implement logging system for tracking ballot modifications for security and transparency
 - **Automated Testing**: Set up comprehensive testing suite for core voting and counting functionality
 - **CI/CD Pipeline**: Configure GitHub Actions for automated testing and deployment workflow including OpenCommit for better commit messages
+- **Technical Debt & Integrity**
+    - **Immer Integration**: Integrate `immer` into Zustand stores for safer and more readable state transitions.
+    - **Hook Rule Compliance**: Refactor `Votes.tsx` to remove `useHotkeys` from loops and ensure compliance with React Hook rules.
+    - **Logic Consolidation**: Move complex election calculations (divisor, tallying) from components to `electionDomain.ts` and ensure they are memoized.
+    - **Tie-Handling UI**: Add explicit visual flagging for "Tied" results where the number of qualified candidates exceeds available vacancies.
 - **React 19 & Vite 7 Optimization**
     - **Transition to React Compiler**: Evaluate and enable the React Compiler for automatic memoization.
     - **Use Action Hooks**: Refactor form interactions and state updates to use `useActionState` and `useOptimistic` for smoother UX.
