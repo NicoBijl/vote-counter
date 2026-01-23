@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run unit tests with coverage
@@ -126,6 +127,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright Browsers
@@ -149,6 +151,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Build app
@@ -159,15 +162,16 @@ jobs:
     needs: [unit, e2e, build]
     if: ${{ github.event.pull_request && needs.unit.result == 'success' && needs.e2e.result == 'success' && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
+    outputs:
+      details_url: ${{ steps.deploy.outputs.details_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Build app
-        run: npm run build
       - name: Prepare reports directory
         run: mkdir -p public/reports/unit public/reports/e2e
       - name: Download unit report
@@ -200,6 +204,8 @@ jobs:
             fi
             echo "</ul></body></html>";
           } > public/reports/index.html
+      - name: Build app
+        run: npm run build
       - name: Deploy to Firebase preview
         id: deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
