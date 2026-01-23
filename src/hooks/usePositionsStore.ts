@@ -1,9 +1,11 @@
 import {Position} from "../types.ts";
 import {create} from "zustand";
-import {persist} from "zustand/middleware";
+import {persist, createJSONStorage} from "zustand/middleware";
+import {convertLegacyPositions} from "../utils/positionUtils";
 
 const defaultPositions = [{
-    max: 1,
+    maxVotesPerBallot: 1,
+    maxVacancies: 1,
     key: "diaken",
     title: "Diaken",
     persons: [
@@ -12,7 +14,8 @@ const defaultPositions = [{
     ]
 },
     {
-        max: 2,
+        maxVotesPerBallot: 2,
+        maxVacancies: 2,
         key: "ouderling",
         title: "Ouderling",
         persons: [
@@ -23,7 +26,8 @@ const defaultPositions = [{
         ]
     },
     {
-        max: 1,
+        maxVotesPerBallot: 1,
+        maxVacancies: 1,
         key: "secretaris",
         title: "Secretaris",
         persons: [
@@ -32,17 +36,53 @@ const defaultPositions = [{
     }
 ] as Array<Position>;
 
-export const usePositionsStore = create<PositionStore>()(persist(
-    (set) => {
-        return ({
-            positions: defaultPositions,
-            setPositions : (newPositions) => set(() => ({positions: newPositions}))
-        })
-    },
-    {
-        name: "positions-store", // by default localStorage is used.
-    }
-))
+export const usePositionsStore = create<PositionStore>()(
+    persist(
+        (set) => ({
+            positions: defaultPositions,  // Start with default positions
+            setPositions: (newPositions: Position[]) => {
+                console.log("[DEBUG_LOG] Setting positions:", newPositions);
+                set({ positions: newPositions });
+            }
+        }),
+        {
+            name: "positions-store",
+            version: 1,
+            storage: createJSONStorage(() => localStorage),
+            migrate: (persistedState: unknown, version: number) => {
+                console.log("[DEBUG_LOG] Migrating state version:", version);
+
+                // Make sure we have a valid state object
+                if (!persistedState || typeof persistedState !== 'object') {
+                    console.log("[DEBUG_LOG] No persisted state, using defaults");
+                    return { positions: defaultPositions };
+                }
+
+                const state = persistedState as { positions?: unknown };
+
+                if (version === 0 || !('positions' in state)) {
+                    // Handle migration from version 0 or missing/invalid position data
+                    console.log("[DEBUG_LOG] Migrating from version 0 or invalid state");
+                    
+                    // Get positions from state if they exist, otherwise use defaults
+                    const positions = state.positions || defaultPositions;
+                    
+                    return {
+                        ...state,
+                        positions: convertLegacyPositions(positions)
+                    };
+                }
+                
+                // For any other version, ensure positions have the correct format
+                console.log("[DEBUG_LOG] Ensuring position format for version:", version);
+                return {
+                    ...state,
+                    positions: convertLegacyPositions(state.positions)
+                };
+            },
+        }
+    )
+)
 
 interface PositionStore {
     positions: Array<Position>
