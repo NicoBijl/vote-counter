@@ -126,3 +126,15 @@ npm run test:e2e:cli:chrome
 - **Audit Trails**: Implement logging system for tracking ballot modifications for security and transparency
 - **Automated Testing**: Set up comprehensive testing suite for core voting and counting functionality
 - **CI/CD Pipeline**: Configure GitHub Actions for automated testing and deployment workflow including OpenCommit for better commit messages
+- **React 19 & Vite 7 Optimization**
+    - **Transition to React Compiler**: Evaluate and enable the React Compiler for automatic memoization.
+    - **Use Action Hooks**: Refactor form interactions and state updates to use `useActionState` and `useOptimistic` for smoother UX.
+    - **Resource Preloading**: Implement `preload` and `preinit` for critical assets (fonts, theme data) to improve initial load performance.
+- **Advanced Electoral Features**
+    - **Weighted Voting Support**: Add capability to handle ballots with different weight values for complex organizational votes.
+    - **Multiple Election Methods**: Implement support for alternative counting methods (e.g., Single Transferable Vote, Borda count).
+    - **Encrypted Local Backups**: Implement an option to export/import encrypted state files to allow safe off-device storage.
+- **Enhanced UI/UX**
+    - **Dark/Light Mode**: Full theme customization using MUI's system and React 19's theme features.
+    - **Live Result Visualizations**: Add more interactive chart types (Sankey diagrams for vote flows, donut charts for vacancy status).
+    - **Mobile Counting Mode**: Optimize the Votes page for one-handed operation on mobile devices during physical counts.
