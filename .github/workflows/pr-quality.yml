@@ -1,0 +1,292 @@
+name: PR Quality
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+  actions: read
+  security-events: write
+
+jobs:
+  unit:
+    name: Unit tests with coverage
+    runs-on: ubuntu-latest
+    outputs:
+      lines: ${{ steps.coverage_summary.outputs.lines }}
+      statements: ${{ steps.coverage_summary.outputs.statements }}
+      branches: ${{ steps.coverage_summary.outputs.branches }}
+      functions: ${{ steps.coverage_summary.outputs.functions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests with coverage
+        id: unit_tests
+        run: npm run test -- --coverage --coverageReporters=lcov --coverageReporters=json-summary
+      - name: Extract coverage summary
+        id: coverage_summary
+        if: ${{ always() && hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const summaryPath = 'coverage/coverage-summary.json';
+          if (!fs.existsSync(summaryPath)) {
+            console.log('coverage-summary.json not found');
+            process.exit(0);
+          }
+          const total = JSON.parse(fs.readFileSync(summaryPath, 'utf8')).total;
+          const toPct = (section) => Number.parseFloat((section?.pct ?? 0).toFixed(2));
+          const lines = toPct(total.lines);
+          const statements = toPct(total.statements);
+          const branches = toPct(total.branches);
+          const functions = toPct(total.functions);
+          const outputs = { lines, statements, branches, functions };
+          for (const [key, value] of Object.entries(outputs)) {
+            console.log(`${key}=${value}`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+          }
+          EOF
+      - name: Upload coverage artifact
+        if: ${{ always() && hashFiles('coverage/lcov-report/index.html') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-report
+          path: coverage/lcov-report
+          retention-days: 14
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    outputs:
+      trivy_summary: ${{ steps.trivy_summary.outputs.summary }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Trufflehog - Changes
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          ignore-unfixed: true
+          format: table
+          severity: 'CRITICAL'
+          exit-code: 0
+      - name: Run Trivy vulnerability scanner in repo mode (JSON)
+        id: trivy_json
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          ignore-unfixed: true
+          format: json
+          output: trivy-results.json
+          severity: 'HIGH,CRITICAL,MEDIUM,LOW,UNKNOWN'
+          exit-code: 0
+      - name: Summarize Trivy findings
+        id: trivy_summary
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const path = 'trivy-results.json';
+          if (!fs.existsSync(path)) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `summary=unavailable\n`);
+            process.exit(0);
+          }
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+          // Newer Trivy JSON aggregates in Results[].Vulnerabilities
+          const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, UNKNOWN: 0 };
+          const add = (sev) => { if (counts[sev] !== undefined) counts[sev] += 1; };
+          (data.Results || []).forEach(r => (r.Vulnerabilities || []).forEach(v => add(v.Severity)));
+          const summary = Object.entries(counts)
+            .filter(([, v]) => v > 0)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(', ') || 'no issues';
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `summary=${summary}\n`);
+          EOF
+
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        id: e2e_tests
+        run: npm run test:e2e:cli:chrome
+      - name: Upload Playwright report
+        if: ${{ always() && hashFiles('playwright-report/index.html') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build app
+        run: npm run build
+
+  deploy-preview:
+    name: Deploy preview with reports
+    needs: [unit, e2e, build]
+    if: ${{ github.event.pull_request && needs.unit.result == 'success' && needs.e2e.result == 'success' && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      details_url: ${{ steps.deploy.outputs.details_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Prepare reports directory
+        run: mkdir -p public/reports/unit public/reports/e2e
+      - name: Download unit report
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-report
+          path: public/reports/unit
+        continue-on-error: true
+      - name: Download Playwright report
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: public/reports/e2e
+        continue-on-error: true
+      - name: Generate reports index
+        run: |
+          {
+            echo "<!doctype html><html><head><meta charset='UTF-8'><title>Test Reports</title></head><body>";
+            echo "<h1>Test Reports</h1>";
+            echo "<ul>";
+            if [ -f public/reports/unit/index.html ]; then
+              echo "<li>Unit tests: <a href='./unit/index.html'>coverage report</a></li>";
+            else
+              echo "<li>Unit tests: report unavailable</li>";
+            fi
+            if [ -f public/reports/e2e/index.html ]; then
+              echo "<li>E2E tests: <a href='./e2e/index.html'>Playwright report</a></li>";
+            else
+              echo "<li>E2E tests: report unavailable</li>";
+            fi
+            echo "</ul></body></html>";
+          } > public/reports/index.html
+      - name: Build app
+        run: npm run build
+      - name: Deploy to Firebase preview
+        id: deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_VOTE_COUNTER_C8CD5 }}'
+          projectId: vote-counter-c8cd5
+          channelId: pr-${{ github.event.pull_request.number }}
+          expires: 7d
+
+  comment:
+    name: Comment on PR
+    needs: [unit, e2e, build, deploy-preview, security]
+    runs-on: ubuntu-latest
+    if: ${{ always() && github.event.pull_request }}
+    steps:
+      - name: Post combined report comment
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ needs.deploy-preview.outputs.details_url }}
+          UNIT_STATUS: ${{ needs.unit.result }}
+          E2E_STATUS: ${{ needs.e2e.result }}
+          BUILD_STATUS: ${{ needs.build.result }}
+          SECURITY_STATUS: ${{ needs.security.result }}
+          TRIVY_SUMMARY: ${{ needs.security.outputs.trivy_summary }}
+          COV_LINES: ${{ needs.unit.outputs.lines }}
+          COV_BRANCHES: ${{ needs.unit.outputs.branches }}
+          COV_FUNCTIONS: ${{ needs.unit.outputs.functions }}
+          COV_STATEMENTS: ${{ needs.unit.outputs.statements }}
+        with:
+          script: |
+            const marker = '🧪 Test reports for this PR (Firebase preview)';
+            const preview = process.env.PREVIEW_URL || '';
+            const unitStatus = process.env.UNIT_STATUS || 'unknown';
+            const e2eStatus = process.env.E2E_STATUS || 'unknown';
+            const buildStatus = process.env.BUILD_STATUS || 'unknown';
+            const cov = {
+              lines: process.env.COV_LINES,
+              branches: process.env.COV_BRANCHES,
+              functions: process.env.COV_FUNCTIONS,
+              statements: process.env.COV_STATEMENTS,
+            };
+            const trivy = process.env.TRIVY_SUMMARY || 'unavailable';
+            const formatCov = () => {
+              const entries = Object.entries(cov).filter(([, v]) => v !== '' && v != null);
+              if (!entries.length) return 'coverage unavailable';
+              return entries.map(([k, v]) => `${k}: ${v}%`).join(', ');
+            };
+            const reportLink = preview ? `${preview}/reports/index.html` : null;
+            const unitLink = preview ? `${preview}/reports/unit/index.html` : null;
+            const e2eLink = preview ? `${preview}/reports/e2e/index.html` : null;
+            const lines = [
+              marker,
+              `- Preview: ${reportLink ? `[reports index](${reportLink})` : 'unavailable'}`,
+              `- Build: **${buildStatus}**`,
+              `- Unit tests: **${unitStatus}**${unitLink ? ` ([coverage report](${unitLink}))` : ''}`,
+              `  - Coverage: ${formatCov()}`,
+              `- E2E tests: **${e2eStatus}**${e2eLink ? ` ([Playwright report](${e2eLink}))` : ''}`,
+              `- Security (Trivy/Trufflehog): **${process.env.SECURITY_STATUS || 'unknown'}** — ${trivy}`
+            ];
+            const body = lines.join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+            }
