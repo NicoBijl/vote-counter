@@ -56,7 +56,7 @@ export function convertLegacyPosition(position: LegacyPosition): Position {
  * Converts an array of positions from legacy format to current format.
  * If the input is not an array, returns an empty array.
  */
-export function convertLegacyPositions(positions: any): Position[] {
+export function convertLegacyPositions(positions: unknown): Position[] {
     if (!Array.isArray(positions)) {
         console.error("[DEBUG_LOG] Expected positions to be an array but got:", typeof positions);
         return [];
@@ -64,7 +64,7 @@ export function convertLegacyPositions(positions: any): Position[] {
     
     // Filter out invalid positions and convert the valid ones
     return positions
-        .filter(position => position && typeof position === 'object')
+        .filter((position): position is LegacyPosition => !!position && typeof position === 'object')
         .map(position => {
             try {
                 return convertLegacyPosition(position);
@@ -73,5 +73,5 @@ export function convertLegacyPositions(positions: any): Position[] {
                 return null;
             }
         })
-        .filter(Boolean) as Position[];
+        .filter((p): p is Position => !!p);
 }
