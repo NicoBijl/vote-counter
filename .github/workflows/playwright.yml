@@ -4,6 +4,13 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 jobs:
   test:
     timeout-minutes: 60
@@ -18,10 +25,56 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
+      id: tests
       run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      continue-on-error: true
+    - name: Upload Playwright report for Pages
+      if: ${{ always() }}
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: playwright-report/
+    - name: Upload Playwright report artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+    - name: Fail job if tests failed
+      if: ${{ steps.tests.outcome == 'failure' }}
+      run: exit 1
+  deploy-report:
+    needs: test
+    if: ${{ always() }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy Playwright HTML report to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+  comment-on-pr:
+    needs: [deploy-report, test]
+    if: ${{ github.event.pull_request && always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Comment with Playwright report link
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const pageUrl = '${{ needs.deploy-report.outputs.page_url }}';
+          const status = '${{ needs.test.result }}';
+          const body = [
+            '🧪 Playwright report available for this PR.',
+            `- Status: **${status}**`,
+            `- Report: ${pageUrl}`
+          ].join('\n');
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body
+          });
