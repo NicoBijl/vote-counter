@@ -102,7 +102,7 @@ jobs:
           const path = 'trivy-results.json';
           if (!fs.existsSync(path)) {
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `summary=unavailable\n`);
-            return;
+            process.exit(0);
           }
           const data = JSON.parse(fs.readFileSync(path, 'utf8'));
           // Newer Trivy JSON aggregates in Results[].Vulnerabilities
