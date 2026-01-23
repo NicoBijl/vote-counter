@@ -49,24 +49,26 @@ export const usePositionsStore = create<PositionStore>()(
             name: "positions-store",
             version: 1,
             storage: createJSONStorage(() => localStorage),
-            migrate: (persistedState: any, version: number) => {
+            migrate: (persistedState: unknown, version: number) => {
                 console.log("[DEBUG_LOG] Migrating state version:", version);
 
                 // Make sure we have a valid state object
-                if (!persistedState) {
+                if (!persistedState || typeof persistedState !== 'object') {
                     console.log("[DEBUG_LOG] No persisted state, using defaults");
                     return { positions: defaultPositions };
                 }
 
-                if (version === 0 || !('positions' in persistedState)) {
+                const state = persistedState as { positions?: unknown };
+
+                if (version === 0 || !('positions' in state)) {
                     // Handle migration from version 0 or missing/invalid position data
                     console.log("[DEBUG_LOG] Migrating from version 0 or invalid state");
                     
                     // Get positions from state if they exist, otherwise use defaults
-                    const positions = persistedState?.positions || defaultPositions;
+                    const positions = state.positions || defaultPositions;
                     
                     return {
-                        ...persistedState,
+                        ...state,
                         positions: convertLegacyPositions(positions)
                     };
                 }
@@ -74,8 +76,8 @@ export const usePositionsStore = create<PositionStore>()(
                 // For any other version, ensure positions have the correct format
                 console.log("[DEBUG_LOG] Ensuring position format for version:", version);
                 return {
-                    ...persistedState,
-                    positions: convertLegacyPositions(persistedState.positions)
+                    ...state,
+                    positions: convertLegacyPositions(state.positions)
                 };
             },
         }
