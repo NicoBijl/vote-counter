@@ -13,6 +13,7 @@ interface BallotState {
     setVoteIndex: (index: number) => void
     saveVote: (ballot: Ballot) => void
     setBallotVote: (index: number, position: PositionKey, person: PersonKey, checked: boolean) => void
+    importBallots: (newBallots: Array<Ballot>) => void
     // countVoted: (position: PositionKey, person: PersonKey)=> number
 }
 
@@ -26,12 +27,15 @@ export function createNewBallot(index: number) {
 
 export const useBallotStore = create<BallotState>()(persist(
     (set) => {
-        const DEFAULT = {
-            ballots: [createNewBallot(0)],
-            currentBallotIndex: 0
+        const createDefault = () => {
+            return {
+                ballots: [createNewBallot(0)],
+                currentBallotIndex: 0
+            }
         }
+
         return ({
-            ...DEFAULT,
+            ...createDefault(),
             addBallot: (newBallot) => set((state) => ({ballots: state.ballots.concat([newBallot])})),
             removeBallot: (ballot) => set((state) => {
                 if (state.ballots.length == 1) {
@@ -48,7 +52,7 @@ export const useBallotStore = create<BallotState>()(persist(
                     currentBallotIndex: Math.max(ballot.index == state.currentBallotIndex ? state.currentBallotIndex - 1 : state.currentBallotIndex, 0)
                 });
             }),
-            removeAllBallots: () => set(() => ({ballots: [createNewBallot(0)], currentBallotIndex: 0})),
+            removeAllBallots: () => set(() => createDefault()),
             setVoteIndex: (newBallotIndex) => set(() => {
                 console.log("setVoteIndex", newBallotIndex)
                 return ({currentBallotIndex: newBallotIndex});
@@ -99,7 +103,14 @@ export const useBallotStore = create<BallotState>()(persist(
                 console.log("nextVote", newBallotIndex)
                 return ({currentBallotIndex: newBallotIndex, ballots: updatedBallots});
             }),
-            previousVote: () => set((state) => ({currentBallotIndex: Math.max(state.currentBallotIndex - 1, 0)}))
+            previousVote: () => set((state) => ({currentBallotIndex: Math.max(state.currentBallotIndex - 1, 0)})),
+            importBallots: (newBallots: Array<Ballot>) => {
+                console.log("[DEBUG_LOG] Setting ballots:", newBallots);
+                set({
+                    ballots: newBallots,
+                    currentBallotIndex: newBallots.length - 1
+                });
+            }
         });
     },
     {
