@@ -39,10 +39,15 @@ export function BallotPosition({
                                    setFocusPosition,
                                    isChecked,
                                    setChecked,
-                                   maxReached
-                               }: BallotPositionProps) {
-    let tabIndex = positionTabIndex
+                                    maxReached
+                                }: BallotPositionProps) {
     const positionRef = useRef<HTMLInputElement | null>(null);
+
+    function changePositionFocus(position: Position) {
+        console.log('change focus to position with key: ', position.key)
+        setFocusPosition(position)
+        positionRef.current?.focus();
+    }
 
     useHotkeys(position.title[0], () => changePositionFocus(position), {enableOnFormTags: true})
 
@@ -56,20 +61,9 @@ export function BallotPosition({
         setFocusPosition(position);
     }
 
-    function getNextPersonTabIndex() {
-        tabIndex = tabIndex + 1
-        return tabIndex;
-    }
-
-    function changePositionFocus(position: Position) {
-        console.log('change focus to position with key: ', position.key)
-        setFocusPosition(position)
-        positionRef.current?.focus();
-    }
-
     return <>
         <Grid size={{ xs: 6, sm: 3 }} sx={{ mb: 2, mt: 2, padding: ".6rem", borderRadius: ".3rem" }}
-              tabIndex={tabIndex}
+              tabIndex={positionTabIndex}
               onFocus={onFocusPosition}
               className={focussed ? "focus" : ""}
               ref={positionRef}
@@ -100,7 +94,7 @@ export function BallotPosition({
                         <FormControlLabel
                             control={
                                 <Checkbox
-                                    tabIndex={getNextPersonTabIndex()}
+                                    tabIndex={positionTabIndex + personIndex + 1}
                                     onChange={(_event, checked) => setChecked(position.key, person.key, checked)}
                                     checked={isChecked(position.key, person.key)}
                                     disabled={(maxReached(position.key) && !isChecked(position.key, person.key)) || isChecked(position.key, "invalid")}
@@ -119,7 +113,7 @@ export function BallotPosition({
                     <FormControlLabel
                         control={
                             <Checkbox color={"error"}
-                                      tabIndex={getNextPersonTabIndex()}
+                                      tabIndex={positionTabIndex + position.persons.length + 1}
                                       onChange={(_event, checked) => setChecked(position.key, "invalid", checked)}
                                       checked={isChecked(position.key, "invalid")}
                             />
@@ -145,7 +139,6 @@ export function Votes() {
     const {positions} = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    let tabIndex = 1000
 
     function focusPreviousPosition() {
         if (focusPosition) {
@@ -165,7 +158,7 @@ export function Votes() {
         console.log("currentBallotIndex updated")
         setFocusPosition(positions[0]);
         setIsDialogOpen(false);
-    }, [currentBallotIndex]);
+    }, [currentBallotIndex, positions]);
 
 
     // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
@@ -222,11 +215,6 @@ export function Votes() {
 
     function maxReached(positionKey: PositionKey): boolean {
         return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
-    }
-
-    function getNextPositionTabIndex() {
-        tabIndex = (Math.floor(tabIndex / 100) * 100) + 100
-        return tabIndex;
     }
 
     function openRemoveConfirmationDialog() {
@@ -292,10 +280,10 @@ export function Votes() {
                         </Grid>
 
 
-                        {positions.map((position) =>
+                        {positions.map((position, index) =>
                             <BallotPosition key={position.key}
                                             position={position}
-                                            positionTabIndex={getNextPositionTabIndex()}
+                                            positionTabIndex={1100 + (index * 100)}
                                             focussed={focusPosition?.key === position.key}
                                             setFocusPosition={(position) => {
                                                 setFocusPosition(position)
