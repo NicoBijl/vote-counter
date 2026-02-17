@@ -111,35 +111,13 @@ For AI/CLI environments, use the following command to avoid opening the HTML rep
 npm run test:e2e:cli:chrome
 ```
 
-## Todo:
+## Roadmap
 
-- **Results Enhancement**
-    - When there are multiple people with the same amount of votes (and more then the electoral divisor) the should be handled the same. But this piece of code
-      `.slice(0, position.maxVacancies)` not creates unequal handling. Please fix this.
-- **Help & Documentation**: Create a dedicated help section with keyboard shortcuts overview and usage examples
-- **Voter Metrics**: Implement voter attendance tracking to calculate participation ratio against registered voters
-- **Position Management**: Build an intuitive position editor interface with drag-and-drop functionality
-- **User Guide**: Develop comprehensive documentation with screenshots and use cases for all app features
-- **Cross-Device Validation**: Create a dual-device verification system where votes counted on separate devices can be compared to identify discrepancies and
-  ensure counting accuracy
-- **Export Capabilities**: Add functionality to export results in CSV/PDF formats for record-keeping
-- **Audit Trails**: Implement logging system for tracking ballot modifications for security and transparency
-- **Automated Testing**: Set up comprehensive testing suite for core voting and counting functionality
-- **CI/CD Pipeline**: Configure GitHub Actions for automated testing and deployment workflow including OpenCommit for better commit messages
-- **Technical Debt & Integrity**
-    - **Immer Integration**: Integrate `immer` into Zustand stores for safer and more readable state transitions.
-    - **Hook Rule Compliance**: Refactor `Votes.tsx` to remove `useHotkeys` from loops and ensure compliance with React Hook rules.
-    - **Logic Consolidation**: Move complex election calculations (divisor, tallying) from components to `electionDomain.ts` and ensure they are memoized.
-    - **Tie-Handling UI**: Add explicit visual flagging for "Tied" results where the number of qualified candidates exceeds available vacancies.
-- **React 19 & Vite 7 Optimization**
-    - **Transition to React Compiler**: Evaluate and enable the React Compiler for automatic memoization.
-    - **Use Action Hooks**: Refactor form interactions and state updates to use `useActionState` and `useOptimistic` for smoother UX.
-    - **Resource Preloading**: Implement `preload` and `preinit` for critical assets (fonts, theme data) to improve initial load performance.
-- **Advanced Electoral Features**
-    - **Weighted Voting Support**: Add capability to handle ballots with different weight values for complex organizational votes.
-    - **Multiple Election Methods**: Implement support for alternative counting methods (e.g., Single Transferable Vote, Borda count).
-    - **Encrypted Local Backups**: Implement an option to export/import encrypted state files to allow safe off-device storage.
-- **Enhanced UI/UX**
-    - **Dark/Light Mode**: Full theme customization using MUI's system and React 19's theme features.
-    - **Live Result Visualizations**: Add more interactive chart types (Sankey diagrams for vote flows, donut charts for vacancy status).
-    - **Mobile Counting Mode**: Optimize the Votes page for one-handed operation on mobile devices during physical counts.
+The project's roadmap and upcoming tasks are managed via our [GitHub Project Board](https://github.com/users/NicoBijl/projects/3).
+
+Key focus areas include:
+- **Accuracy & Integrity**: Enhancing tie-handling logic and adding audit trails.
+- **Modernization**: Full adoption of React 19 features and React Compiler.
+- **User Experience**: Improved mobile operation and live visualizations.
+- **Advanced Features**: Support for alternative counting methods and weighted voting.
+
