@@ -234,13 +234,38 @@ describe('getCandidateStatus', () => {
 
         // With 31 votes total and 4 persons, the divisor would be 31/4*0.8 = 6.2, rounded up to 7
 
-        // person1, person2, and person3 should be ELECTED (votes >= divisor and in top candidates)
         expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
-        expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
-        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
+        
+        expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.TIED);
+        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.TIED);
 
-        // person4 should be BELOW_DIVISOR (votes < divisor)
         expect(getCandidateStatus(position, 'person4', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
+    });
+
+    it('correctly identifies tied candidates', () => {
+        const position: Position = {
+            key: 'test-position',
+            title: 'Test Position',
+            persons: [
+                { key: 'person1', name: 'Person 1' },
+                { key: 'person2', name: 'Person 2' },
+                { key: 'person3', name: 'Person 3' },
+            ],
+            maxVotesPerBallot: 1,
+            maxVacancies: 1
+        };
+
+        const ballots: Ballot[] = [
+            { index: 0, vote: [{ position: 'test-position', person: 'person1' }] },
+            { index: 1, vote: [{ position: 'test-position', person: 'person1' }] },
+            { index: 2, vote: [{ position: 'test-position', person: 'person2' }] },
+            { index: 3, vote: [{ position: 'test-position', person: 'person2' }] },
+            { index: 4, vote: [{ position: 'test-position', person: 'person3' }] },
+        ];
+
+        expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.TIED);
+        expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.TIED);
+        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
     });
 
     it('correctly identifies above-divisor candidates', () => {
