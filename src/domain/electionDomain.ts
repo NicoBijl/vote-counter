@@ -20,6 +20,19 @@ export interface CandidateResult {
     status: CandidateStatus;
 }
 
+export function calculateAttendanceRatio(ballotsCount: number, totalAllowedVoters: number): string {
+    if (totalAllowedVoters === 0) return "N/A";
+    return ((ballotsCount / totalAllowedVoters) * 100).toFixed(1) + "%";
+}
+
+export function calculateTotalValidVotes(ballots: Ballot[]): number {
+    return ballots.flatMap(b => b.vote).filter(v => v.person !== "invalid").length;
+}
+
+export function calculateChecksum(array: number[]): number {
+    return array.reduce((acc, val, index) => acc + val * Math.pow(2, index), 0);
+}
+
 /**
  * Calculates the electoral divisor for a position
  * @param position The position
@@ -57,6 +70,17 @@ export function countVotes(position: Position, personKey: PersonKey, ballots: Ba
     return personKey === 'invalid' ? checked * position.maxVotesPerBallot : checked;
 }
 
+export function calculateBlankVotes(position: Position, ballots: Ballot[]): number {
+    return ballots.flatMap(b => {
+        const isInvalid = !!b.vote.find(v => v.position === position.key && v.person === "invalid");
+        if (isInvalid) {
+            return 0;
+        } else {
+            return position.maxVotesPerBallot - b.vote.filter(v => v.position === position.key && v.person !== "invalid").length;
+        }
+    }).reduce((acc, val) => acc + val, 0);
+}
+
 /**
  * Gets the top candidates for a position
  * @param position The position
@@ -71,16 +95,13 @@ export function getTopCandidates(position: Position, ballots: Ballot[]): PersonK
         }))
         .sort((a, b) => b.votes - a.votes);
 
-    // If there are no candidates, return empty array
     if (candidatesWithVotes.length === 0) {
         return [];
     }
 
-    // Get the vote count of the candidate at the maxVacancies position (if exists)
     const cutoffIndex = Math.min(position.maxVacancies - 1, candidatesWithVotes.length - 1);
     const cutoffVotes = candidatesWithVotes[cutoffIndex].votes;
 
-    // Include all candidates with votes >= cutoffVotes
     return candidatesWithVotes
         .filter(candidate => candidate.votes >= cutoffVotes)
         .map(candidate => candidate.key);
@@ -120,6 +141,32 @@ export function getCandidateStatus(
     }
 
     return CandidateStatus.BELOW_DIVISOR;
+}
+
+export interface VoteStats {
+    name: string;
+    value: number;
+    color?: string;
+    total: number;
+    key?: string;
+}
+
+export function getPositionVoteStats(position: Position, ballots: Ballot[]): VoteStats[] {
+    const personVotes = position.persons.map(person => ({
+        name: person.name,
+        value: countVotes(position, person.key, ballots),
+        key: person.key
+    }));
+
+    const invalid = countVotes(position, "invalid", ballots);
+    const blank = calculateBlankVotes(position, ballots);
+    const total = personVotes.reduce((sum, entry) => sum + entry.value, 0) + blank + invalid;
+
+    return [
+        ...personVotes.map(entry => ({...entry, total})),
+        { name: 'Blank', value: blank, total },
+        { name: 'Invalid', value: invalid, total }
+    ];
 }
 
 /**
