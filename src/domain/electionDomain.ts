@@ -6,6 +6,7 @@ import { Ballot } from '../hooks/useBallotStore';
  */
 export enum CandidateStatus {
     ELECTED = 'elected',
+    TIED = 'tied',
     ABOVE_DIVISOR = 'above-divisor',
     BELOW_DIVISOR = 'below-divisor'
 }
@@ -105,17 +106,24 @@ export function getCandidateStatus(
 
     const votes = countVotes(position, personKey, ballots);
     const divisor = calculateElectoralDivisor(position, ballots, electoralDivisorVariable);
-    const topCandidates = getTopCandidates(position, ballots);
 
-    if (votes >= divisor) {
-        if (topCandidates.includes(personKey)) {
-            return CandidateStatus.ELECTED;
-        } else {
-            return CandidateStatus.ABOVE_DIVISOR;
-        }
+    if (votes < divisor) {
+        return CandidateStatus.BELOW_DIVISOR;
     }
 
-    return CandidateStatus.BELOW_DIVISOR;
+    const allCandidateVotes = position.persons.map(p => countVotes(position, p.key, ballots));
+    const higherCount = allCandidateVotes.filter(v => v > votes).length;
+    const sameCount = allCandidateVotes.filter(v => v === votes).length;
+
+    if (higherCount + sameCount <= position.maxVacancies) {
+        return CandidateStatus.ELECTED;
+    }
+
+    if (higherCount < position.maxVacancies) {
+        return CandidateStatus.TIED;
+    }
+
+    return CandidateStatus.ABOVE_DIVISOR;
 }
 
 /**
