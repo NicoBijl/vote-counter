@@ -185,146 +185,76 @@ describe('getTopCandidates', () => {
 });
 
 describe('getCandidateStatus', () => {
-    it('correctly identifies elected candidates', () => {
-        // Create a position with 4 candidates and 2 vacancies
+    it('correctly identifies ELECTED even with same votes when there is no conflict', () => {
         const position: Position = {
             key: 'test-position',
             title: 'Test Position',
             persons: [
-                {key: 'person1', name: 'Person 1'},
-                {key: 'person2', name: 'Person 2'},
-                {key: 'person3', name: 'Person 3'},
-                {key: 'person4', name: 'Person 4'}
+                {key: 'personA', name: 'Person A'},
+                {key: 'personB', name: 'Person B'},
+                {key: 'personC', name: 'Person C'}
             ],
             maxVotesPerBallot: 1,
             maxVacancies: 2
         };
 
-        // Create ballots with votes: person1 (10), person2 (8), person3 (8), person4 (5)
         const ballots: Ballot[] = [];
-
-        // 10 votes for person1
-        for (let i = 0; i < 10; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person1'}]
-            });
+        for (let i = 0; i < 3; i++) {
+            ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personA'}] });
+            ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personB'}] });
         }
+        ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personC'}] });
 
-        // 8 votes for person2 and person3
-        for (let i = 0; i < 8; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person2'}]
-            });
-
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person3'}]
-            });
-        }
-
-        // 5 votes for person4
-        for (let i = 0; i < 5; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person4'}]
-            });
-        }
-
-        // With 31 votes total and 4 persons, the divisor would be 31/4*0.8 = 6.2, rounded up to 7
-
-        expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.TIED);
-        
-        expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.TIED);
-        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.TIED);
-
-        expect(getCandidateStatus(position, 'person4', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
+        expect(getCandidateStatus(position, 'personA', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
+        expect(getCandidateStatus(position, 'personB', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
+        expect(getCandidateStatus(position, 'personC', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
     });
 
-    it('correctly identifies tied candidates', () => {
+    it('correctly identifies TIED when there is a conflict for remaining slots', () => {
         const position: Position = {
             key: 'test-position',
             title: 'Test Position',
             persons: [
-                { key: 'person1', name: 'Person 1' },
-                { key: 'person2', name: 'Person 2' },
-                { key: 'person3', name: 'Person 3' },
+                {key: 'personA', name: 'A'},
+                {key: 'personB', name: 'B'},
+                {key: 'personC', name: 'C'}
+            ],
+            maxVotesPerBallot: 1,
+            maxVacancies: 2
+        };
+
+        const ballots: Ballot[] = [];
+        for (let i = 0; i < 5; i++) ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personA'}] });
+        for (let i = 0; i < 3; i++) {
+            ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personB'}] });
+            ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'personC'}] });
+        }
+
+        expect(getCandidateStatus(position, 'personA', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
+        expect(getCandidateStatus(position, 'personB', ballots, 0.8)).toBe(CandidateStatus.TIED);
+        expect(getCandidateStatus(position, 'personC', ballots, 0.8)).toBe(CandidateStatus.TIED);
+    });
+
+    it('identifies candidates above divisor but not elected as ABOVE_DIVISOR', () => {
+        const position: Position = {
+            key: 'test-position',
+            title: 'Test Position',
+            persons: [
+                {key: 'person1', name: 'P1'},
+                {key: 'person2', name: 'P2'},
+                {key: 'person3', name: 'P3'}
             ],
             maxVotesPerBallot: 1,
             maxVacancies: 1
         };
 
-        const ballots: Ballot[] = [
-            { index: 0, vote: [{ position: 'test-position', person: 'person1' }] },
-            { index: 1, vote: [{ position: 'test-position', person: 'person1' }] },
-            { index: 2, vote: [{ position: 'test-position', person: 'person2' }] },
-            { index: 3, vote: [{ position: 'test-position', person: 'person2' }] },
-            { index: 4, vote: [{ position: 'test-position', person: 'person3' }] },
-        ];
-
-        expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.TIED);
-        expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.TIED);
-        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
-    });
-
-    it('correctly identifies above-divisor candidates', () => {
-        // Create a position with 4 candidates and 1 vacancy
-        const position: Position = {
-            key: 'test-position',
-            title: 'Test Position',
-            persons: [
-                {key: 'person1', name: 'Person 1'},
-                {key: 'person2', name: 'Person 2'},
-                {key: 'person3', name: 'Person 3'},
-                {key: 'person4', name: 'Person 4'}
-            ],
-            maxVotesPerBallot: 1,
-            maxVacancies: 1
-        };
-
-        // Create ballots with votes: person1 (10), person2 (8), person3 (8), person4 (5)
         const ballots: Ballot[] = [];
+        for (let i = 0; i < 10; i++) ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'person1'}] });
+        for (let i = 0; i < 8; i++) ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'person2'}] });
+        for (let i = 0; i < 5; i++) ballots.push({ index: ballots.length, vote: [{position: 'test-position', person: 'person3'}] });
 
-        // 10 votes for person1
-        for (let i = 0; i < 10; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person1'}]
-            });
-        }
-
-        // 8 votes for person2 and person3
-        for (let i = 0; i < 8; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person2'}]
-            });
-
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person3'}]
-            });
-        }
-
-        // 5 votes for person4
-        for (let i = 0; i < 5; i++) {
-            ballots.push({
-                index: ballots.length,
-                vote: [{position: 'test-position', person: 'person4'}]
-            });
-        }
-
-        // With 31 votes total and 4 persons, the divisor would be 31/4*0.8 = 6.2, rounded up to 7
-
-        // person1 should be ELECTED (votes >= divisor and in top candidates)
         expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
-
-        // person2 and person3 should be ABOVE_DIVISOR (votes >= divisor but not in top candidates)
         expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.ABOVE_DIVISOR);
-        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.ABOVE_DIVISOR);
-
-        // person4 should be BELOW_DIVISOR (votes < divisor)
-        expect(getCandidateStatus(position, 'person4', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
+        expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.BELOW_DIVISOR);
     });
 });
