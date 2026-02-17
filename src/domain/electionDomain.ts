@@ -6,6 +6,7 @@ import { Ballot } from '../hooks/useBallotStore';
  */
 export enum CandidateStatus {
     ELECTED = 'elected',
+    TIED = 'tied',
     ABOVE_DIVISOR = 'above-divisor',
     BELOW_DIVISOR = 'below-divisor'
 }
@@ -109,6 +110,9 @@ export function getCandidateStatus(
 
     if (votes >= divisor) {
         if (topCandidates.includes(personKey)) {
+            if (topCandidates.length > position.maxVacancies) {
+                return CandidateStatus.TIED;
+            }
             return CandidateStatus.ELECTED;
         } else {
             return CandidateStatus.ABOVE_DIVISOR;
