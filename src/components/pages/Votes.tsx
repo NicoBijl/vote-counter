@@ -160,38 +160,13 @@ export function Votes() {
         setIsDialogOpen(false);
     }, [currentBallotIndex, positions]);
 
-
-    // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
-    for (let i = 1; i <= 9; i++) {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        useHotkeys(`${i}`, () => {
-                console.log("focused Position: ", focusPosition, i)
-                toggleChecked(focusPosition!, focusPosition!.persons[i - 1].key);
-            }, {enableOnFormTags: true}
-        )
+    function isChecked(positionKey: PositionKey, personKey: PersonKey): boolean {
+        return !!currentVote?.vote.find(v => v.position == positionKey && v.person == personKey)
     }
-    // invalid
-    useHotkeys("i", () => {
-            toggleChecked(focusPosition!, "invalid");
-        }, {enableOnFormTags: true}
-    )
-    useHotkeys("n", () => {
-        nextVote()
-    }, {enableOnFormTags: true})
 
-    useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
-    useHotkeys("ArrowDown", () => {
-        if (currentBallotIndex !== ballots.length - 1) {
-            nextVote()
-        }
-    }, {enableOnFormTags: true})
-    useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
-    useHotkeys("ArrowRight", focusNextPosition, {enableOnFormTags: true})
-    useHotkeys("Backspace", openRemoveConfirmationDialog, {enableOnFormTags: true})
-    useHotkeys("Escape", () => {
-            setIsDialogOpen(false);
-        }, {enableOnFormTags: true}
-    )
+    function maxReached(positionKey: PositionKey): boolean {
+        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
+    }
 
     function toggleChecked(position: Position, personKey: PersonKey) {
         console.log("Toggle", position, personKey, currentVote)
@@ -209,12 +184,13 @@ export function Votes() {
         setVoteIndex(pageNumber - 1)
     }
 
-    function isChecked(positionKey: PositionKey, personKey: PersonKey): boolean {
-        return !!currentVote?.vote.find(v => v.position == positionKey && v.person == personKey)
+    function handleDialogClose() {
+        setIsDialogOpen(false)
     }
 
-    function maxReached(positionKey: PositionKey): boolean {
-        return currentVote!.vote.filter(v => v.position == positionKey).length >= (positions.find(p => p.key == positionKey)!.maxVotesPerBallot)
+    function remove() {
+        removeBallot(currentVote!);
+        setIsDialogOpen(false)
     }
 
     function openRemoveConfirmationDialog() {
@@ -228,14 +204,37 @@ export function Votes() {
         }
     }
 
-    function handleDialogClose() {
-        setIsDialogOpen(false)
-    }
+    // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
+    useHotkeys('1,2,3,4,5,6,7,8,9', (event) => {
+        const index = parseInt(event.key) - 1;
+        if (focusPosition && focusPosition.persons[index]) {
+            console.log("focused Position: ", focusPosition, index + 1)
+            toggleChecked(focusPosition, focusPosition.persons[index].key);
+        }
+    }, {enableOnFormTags: true})
+    // invalid
+    useHotkeys("i", () => {
+        if (focusPosition) {
+            toggleChecked(focusPosition, "invalid");
+        }
+    }, {enableOnFormTags: true})
+    useHotkeys("n", () => {
+        nextVote()
+    }, {enableOnFormTags: true})
 
-    function remove() {
-        removeBallot(currentVote!);
-        setIsDialogOpen(false)
-    }
+    useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
+    useHotkeys("ArrowDown", () => {
+        if (currentBallotIndex !== ballots.length - 1) {
+            nextVote()
+        }
+    }, {enableOnFormTags: true})
+    useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
+    useHotkeys("ArrowRight", focusNextPosition, {enableOnFormTags: true})
+    useHotkeys("Backspace", openRemoveConfirmationDialog, {enableOnFormTags: true})
+    useHotkeys("Escape", () => {
+            setIsDialogOpen(false);
+        }, {enableOnFormTags: true}
+    )
 
     return <>
         <Paper sx={{p: 1}} className={"vote"}>
