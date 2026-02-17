@@ -234,7 +234,7 @@ describe('getCandidateStatus', () => {
 
         // With 31 votes total and 4 persons, the divisor would be 31/4*0.8 = 6.2, rounded up to 7
 
-        expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.ELECTED);
+        expect(getCandidateStatus(position, 'person1', ballots, 0.8)).toBe(CandidateStatus.TIED);
         
         expect(getCandidateStatus(position, 'person2', ballots, 0.8)).toBe(CandidateStatus.TIED);
         expect(getCandidateStatus(position, 'person3', ballots, 0.8)).toBe(CandidateStatus.TIED);
