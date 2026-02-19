@@ -10,7 +10,7 @@ import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 import Divider from "@mui/material/Divider";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip} from "recharts";
-import {calculateElectoralDivisor, CandidateStatus, countVotes, getCandidateStatus} from "../../domain/electionDomain.ts";
+import {calculateElectoralDivisor, CandidateStatus, countVotes, getCandidateStatus, getTopCandidates} from "../../domain/electionDomain.ts";
 
 export function Results() {
     const {positions} = usePositionsStore()
@@ -73,12 +73,14 @@ export function Results() {
         console.log("totalChecksum", allVotesCounted, checksum(allVotesCounted));
         return checksum(allVotesCounted);
     }
-    function chipColor(position: Position, personKey: PersonKey): { color: 'success' | 'default', variant?: 'outlined' } {
+    function chipColor(position: Position, personKey: PersonKey): { color: 'success' | 'warning' | 'default', variant?: 'outlined' } {
         const status = getCandidateStatus(position, personKey, ballots, electoralDivisorVariable);
 
         switch (status) {
             case CandidateStatus.ELECTED:
                 return { color: 'success' };
+            case CandidateStatus.TIED:
+                return { color: 'warning' };
             case CandidateStatus.ABOVE_DIVISOR:
                 return { color: 'success', variant: 'outlined' };
             case CandidateStatus.BELOW_DIVISOR:
@@ -143,6 +145,11 @@ export function Results() {
         return [...personColors, '#9e9e9e', '#f44336'];
     }
 
+    function isPositionTied(position: Position): boolean {
+        const topCandidates = getTopCandidates(position, ballots);
+        return topCandidates.length > position.maxVacancies;
+    }
+
     return (
         <>
             <Alert severity={"info"} sx={{mb: 2}}>
@@ -174,6 +181,24 @@ export function Results() {
                         }
                     />
                 </Box>
+<<<<<<< HEAD
+                <Grid container>
+                    <Grid container>
+                        <Grid container>
+                            {positions.map((position) => (
+                                <Grid size={{ xs: 6, sm: 3 }} key={"votes-" + position.key}>
+                                    <Typography variant="h4">{position.title}</Typography>
+                                    {isPositionTied(position) && (
+                                        <Alert severity="warning" sx={{ mb: 1, py: 0 }}>
+                                            <Typography variant="caption">
+                                                Tie detected: manual resolution required.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                    <Typography variant="subtitle2">
+                                        Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
+                                    </Typography>
+=======
                 <Grid container spacing={2}>
                     {positions.map((position) => (
                         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={"votes-" + position.key}>
@@ -184,6 +209,7 @@ export function Results() {
                                 </Typography>
                                 
                                 <Box sx={{ flexGrow: 1 }}>
+>>>>>>> origin/main
                                     <List>
                                         {/* When not sorting by vote count, display all persons in original order */}
                                         {!sortResultsByVoteCount && position.persons.map((person) => (
