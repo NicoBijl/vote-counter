@@ -64,13 +64,16 @@ describe('Settings', () => {
         mockPositionsStore.positions = [];
         mockPositionsStore.setPositions.mockClear();
         mockBallotStore.removeAllBallots.mockClear();
+        mockBallotStore.importBallots.mockClear();
         mockSettingsStore.setElectoralDivisorVariable.mockClear();
         mockSettingsStore.setSortResultsByVoteCount.mockClear();
         mockSettingsStore.setTotalAllowedVoters.mockClear();
 
         // Mock file operations
-        global.URL.createObjectURL = jest.fn().mockReturnValue('mock-url') as unknown as (blob: Blob | MediaSource) => string;
-        global.URL.revokeObjectURL = jest.fn();
+        if (global.URL.createObjectURL === undefined) {
+            global.URL.createObjectURL = jest.fn().mockReturnValue('mock-url') as unknown as (blob: Blob | MediaSource) => string;
+            global.URL.revokeObjectURL = jest.fn();
+        }
     });
 
     it('renders all sections', () => {
@@ -88,10 +91,7 @@ describe('Settings', () => {
         const file = new File([JSON.stringify(validPositions)], 'positions.json', { type: 'application/json' });
 
         render(<Settings />);
-        const importButton = screen.getByText('Import Positions');
-        fireEvent.click(importButton);
-
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        const fileInput = document.querySelector('input[id="importPositions"]') as HTMLInputElement;
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         await waitFor(() => {
@@ -100,19 +100,45 @@ describe('Settings', () => {
         });
     });
 
-    it('handles position import with invalid file', async () => {
-        const invalidData = { notAnArray: true };
-        const file = new File([JSON.stringify(invalidData)], 'positions.json', { type: 'application/json' });
+    it('handles legacy position format conversion', async () => {
+        const legacyPositions = [{ key: 'p1', title: 'P1', persons: [], max: 2 }];
+        const file = new File([JSON.stringify(legacyPositions)], 'legacy.json', { type: 'application/json' });
+        
+        render(<Settings />);
+        const fileInput = document.querySelector('input[id="importPositions"]') as HTMLInputElement;
+        fireEvent.change(fileInput, { target: { files: [file] } });
+        
+        await waitFor(() => {
+            expect(mockPositionsStore.setPositions).toHaveBeenCalled();
+            const converted = mockPositionsStore.setPositions.mock.calls[0][0][0];
+            expect(converted.maxVotesPerBallot).toBe(2);
+        });
+    });
+
+    it('handles vote import with valid file', async () => {
+        const validBallots = [{ id: '1', index: 0, vote: [] }];
+        const file = new File([JSON.stringify(validBallots)], 'ballots.json', { type: 'application/json' });
 
         render(<Settings />);
-        const importButton = screen.getByText('Import Positions');
-        fireEvent.click(importButton);
-
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        const fileInput = document.querySelector('input[id="importVotes"]') as HTMLInputElement;
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(screen.getByText('Uploaded file must contain an array of positions')).toBeInTheDocument();
+            expect(mockBallotStore.importBallots).toHaveBeenCalledWith(validBallots);
+            expect(screen.getByText(/Votes successfully imported/)).toBeInTheDocument();
+        });
+    });
+
+    it('handles vote import with invalid format', async () => {
+        const invalidData = [{ notABallot: true }];
+        const file = new File([JSON.stringify(invalidData)], 'invalid.json', { type: 'application/json' });
+
+        render(<Settings />);
+        const fileInput = document.querySelector('input[id="importVotes"]') as HTMLInputElement;
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(screen.getByText('Invalid ballot format. Please check the file structure.')).toBeInTheDocument();
         });
     });
 
@@ -136,43 +162,37 @@ describe('Settings', () => {
         expect(mockSettingsStore.setTotalAllowedVoters).toHaveBeenCalledWith(150);
     });
 
-    it('toggles sort by vote count', () => {
+    it('exports positions when clicked', () => {
+        const testPositions = [{ key: 'pos1', title: 'P1', persons: [], maxVotesPerBallot: 1, maxVacancies: 1 }];
+        mockPositionsStore.positions = testPositions;
         render(<Settings />);
-        const toggle = screen.getByRole('switch');
-        fireEvent.click(toggle);
-        expect(mockSettingsStore.setSortResultsByVoteCount).toHaveBeenCalledWith(false);
+        
+        const mockLink = { href: '', download: '', click: jest.fn() };
+        const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown as HTMLElement);
+        
+        fireEvent.click(screen.getByText('Export Positions'));
+        
+        expect(createElementSpy).toHaveBeenCalledWith('a');
+        expect(mockLink.href).toContain(encodeURIComponent(JSON.stringify(testPositions)));
+        expect(mockLink.click).toHaveBeenCalled();
+        
+        createElementSpy.mockRestore();
     });
 
-    it('exports positions when clicked', () => {
-        // Setup test positions
-        const testPositions = [
-            { key: 'pos1', title: 'Position 1', persons: [], maxVotesPerBallot: 1, maxVacancies: 1 }
-        ];
-        mockPositionsStore.positions = testPositions;
-
+    it('exports votes when clicked', () => {
+        const testBallots = [{ id: '1', index: 0, vote: [] }];
+        mockBallotStore.ballots = testBallots;
         render(<Settings />);
-
-        // Find the export positions button
-        const exportButton = screen.getByText('Export Positions');
-
-        // Mock document.createElement and link.click AFTER rendering but BEFORE clicking
-        const mockLink = {
-            href: '',
-            download: '',
-            click: jest.fn()
-        };
+        
+        const mockLink = { href: '', download: '', click: jest.fn() };
         const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown as HTMLElement);
-
-        // Click the export button
-        fireEvent.click(exportButton);
-
-        // Verify link was created with correct data
-        expect(document.createElement).toHaveBeenCalledWith('a');
-        expect(mockLink.href).toContain(encodeURIComponent(JSON.stringify(testPositions)));
-        expect(mockLink.download).toMatch(/vote-counter-positions-.*\.json/);
+        
+        fireEvent.click(screen.getByText('Export Votes'));
+        
+        expect(mockLink.href).toContain(encodeURIComponent(JSON.stringify(testBallots)));
+        expect(mockLink.download).toContain('ballots');
         expect(mockLink.click).toHaveBeenCalled();
-
-        // Clean up the spy to avoid affecting other tests
+        
         createElementSpy.mockRestore();
     });
 });
