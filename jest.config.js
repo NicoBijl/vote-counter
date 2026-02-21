@@ -19,6 +19,9 @@ const config = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-hotkeys-hook)/)',
+  ],
 };
 
 export default config;
