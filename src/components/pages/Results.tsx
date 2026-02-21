@@ -10,7 +10,7 @@ import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
 import Divider from "@mui/material/Divider";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip} from "recharts";
-import {calculateElectoralDivisor, CandidateStatus, countVotes, getCandidateStatus, getTopCandidates} from "../../domain/electionDomain.ts";
+import {calculateElectoralDivisor, CandidateStatus, countVotes, getCandidateStatus} from "../../domain/electionDomain.ts";
 
 export function Results() {
     const {positions} = usePositionsStore()
@@ -146,8 +146,8 @@ export function Results() {
     }
 
     function isPositionTied(position: Position): boolean {
-        const topCandidates = getTopCandidates(position, ballots);
-        return topCandidates.length > position.maxVacancies;
+        const statuses = position.persons.map(p => getCandidateStatus(position, p.key, ballots, electoralDivisorVariable));
+        return statuses.includes(CandidateStatus.TIED);
     }
 
     return (
@@ -181,22 +181,23 @@ export function Results() {
                         }
                     />
                 </Box>
-                <Grid container>
-                    <Grid container>
-                        <Grid container>
-                            {positions.map((position) => (
-                                <Grid size={{ xs: 6, sm: 3 }} key={"votes-" + position.key}>
-                                    <Typography variant="h4">{position.title}</Typography>
-                                    {isPositionTied(position) && (
-                                        <Alert severity="warning" sx={{ mb: 1, py: 0 }}>
-                                            <Typography variant="caption">
-                                                Tie detected: manual resolution required.
-                                            </Typography>
-                                        </Alert>
-                                    )}
-                                    <Typography variant="subtitle2">
-                                        Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
-                                    </Typography>
+                <Grid container spacing={2}>
+                    {positions.map((position) => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={"votes-" + position.key}>
+                                    <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="h4">{position.title}</Typography>
+                                        {isPositionTied(position) && (
+                                            <Alert severity="warning" sx={{ mb: 1, py: 0 }}>
+                                                <Typography variant="caption">
+                                                    Tie detected: manual resolution required.
+                                                </Typography>
+                                            </Alert>
+                                        )}
+                                        <Typography variant="subtitle2">
+                                            Max votes per ballot: {position.maxVotesPerBallot} • Available positions: {position.maxVacancies}
+                                        </Typography>
+                                        
+                                        <Box sx={{ flexGrow: 1 }}>
                                     <List>
                                         {/* When not sorting by vote count, display all persons in original order */}
                                         {!sortResultsByVoteCount && position.persons.map((person) => (
@@ -263,71 +264,71 @@ export function Results() {
                                                 </ListItem>
                                             ))}
                                     </List>
-                                </Grid>
-                            ))}
-                        </Grid>
-                        <Grid container>
-                            {positions.map((position) => (
-                                <Grid size={{ xs: 6, sm: 3 }} key={"rest-" + position.key}>
-                                    <Divider variant={"middle"}></Divider>
+                                </Box>
 
-                                    {/* Vote Statistics Pie Chart */}
-                                    <Box sx={{ height: 200, width: "100%", mt: 2 }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={getPositionVoteStats(position)}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={30}
-                                                    outerRadius={60}
-                                                    paddingAngle={2}
-                                                    dataKey="value"
-                                                    label={({ value }) => `${value}`}
-                                                >
-                                                    {getPositionVoteStats(position).map((_: VoteStats, index: number) => (
-                                                        <Cell 
-                                                            key={`cell-${index}`} 
-                                                            fill={generateColorPalette(position)[index % generateColorPalette(position).length]}
-                                                        />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip 
-                                                    formatter={(value, name, entry) => {
-                                                        const { total } = entry.payload;
-                                                        const percent = ((value as number) / total * 100).toFixed(1);
-                                                        return [`${value} votes (${percent}%)`, name];
-                                                    }} 
-                                                />
-                                                <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                                                    {getPositionVoteStats(position)[0].total}
-                                                </text>
-                                                <text x="50%" y="55%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '12px' }}>
-                                                    votes
-                                                </text>
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </Box>
+                                <Divider sx={{ my: 2 }} />
 
-                                    {/* Stats in compact form */}
-                                    <List dense>
-                                        {!sortResultsByVoteCount && (
-                                            <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
-                                                <ListItem disableGutters>
-                                                    <Chip label={electoralDivisor(position)} variant="outlined" size="small" sx={{mr: 1}}/>
-                                                    <Typography variant="caption">Electoral Divisor</Typography>
-                                                </ListItem>
-                                            </Tooltip>
-                                        )}
-                                        <ListItem disableGutters>
-                                            <Chip label={positionChecksum(position)} variant="outlined" size="small" sx={{mr: 1}}/>
-                                            <Typography variant="caption">Checksum</Typography>
-                                        </ListItem>
-                                    </List>
-                                </Grid>
-                            ))}
+                                {/* Vote Statistics Pie Chart */}
+                                <Box sx={{ height: 200, width: "100%" }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={getPositionVoteStats(position)}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={30}
+                                                outerRadius={60}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                label={({ value }) => `${value}`}
+                                            >
+                                                {getPositionVoteStats(position).map((_: VoteStats, index: number) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={generateColorPalette(position)[index % generateColorPalette(position).length]}
+                                                    />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip 
+                                                formatter={(value, name, entry) => {
+                                                    const { total } = entry.payload;
+                                                    const percent = ((value as number) / total * 100).toFixed(1);
+                                                    return [`${value} votes (${percent}%)`, name];
+                                                }} 
+                                            />
+                                            <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                                                {getPositionVoteStats(position)[0].total}
+                                            </text>
+                                            <text x="50%" y="55%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '12px' }}>
+                                                votes
+                                            </text>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </Box>
+
+                                {/* Stats in compact form */}
+                                <List dense sx={{ mt: 'auto' }}>
+                                    {!sortResultsByVoteCount && (
+                                        <Tooltip title={calcElectoralDivisor(position)} arrow placement="bottom-start">
+                                            <ListItem disableGutters>
+                                                <Chip label={electoralDivisor(position)} variant="outlined" size="small" sx={{mr: 1}}/>
+                                                <Typography variant="caption">Electoral Divisor</Typography>
+                                            </ListItem>
+                                        </Tooltip>
+                                    )}
+                                    <ListItem disableGutters>
+                                        <Chip label={positionChecksum(position)} variant="outlined" size="small" sx={{mr: 1}}/>
+                                        <Typography variant="caption">Checksum</Typography>
+                                    </ListItem>
+                                </List>
+                            </Paper>
                         </Grid>
-                        <Grid container sx={{pt: 4}}>
+                    ))}
+                </Grid>
+
+                <Box sx={{ mt: 4, p: 2, borderTop: 1, borderColor: 'divider' }}>
+                    <Grid container>
+                        <Grid size={12}>
                             <List>
                                 <ListItem>
                                     <Chip label={ballots.length} variant="outlined" sx={{mr: 2}}/>
@@ -353,7 +354,7 @@ export function Results() {
                             </List>
                         </Grid>
                     </Grid>
-                </Grid>
+                </Box>
             </Paper>
         </>
     );
