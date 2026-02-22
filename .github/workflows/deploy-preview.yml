@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     if: \${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v4
       - name: Get PR Information
         id: pr_info
         uses: actions/github-script@v7
@@ -34,6 +33,11 @@ jobs:
             } else {
               core.setFailed('No open PR found for this branch');
             }
+
+      - uses: actions/checkout@v4
+        with:
+          repository: \${{ github.event.workflow_run.head_repository.full_name }}
+          ref: \${{ github.event.workflow_run.head_branch }}
 
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
