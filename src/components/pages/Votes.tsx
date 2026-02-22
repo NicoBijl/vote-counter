@@ -71,14 +71,15 @@ export function BallotPosition({
                 outline: "2px solid #1976d2",
                 backgroundColor: "rgba(25, 118, 210, 0.04)"
             },
-            "&.focus .focus-indicator": {
-                display: "inline-flex"
-            },
-            "&:not(:focus-visible) .focus-indicator": {
+            "& .focus-indicator": {
                 display: "none"
             },
+            "&.focus:focus-visible .focus-indicator": {
+                display: "inline-flex"
+            },
             "&:not(:focus-visible)": {
-                outline: "none"
+                outline: "none",
+                backgroundColor: "transparent"
             }
         }}
               tabIndex={positionTabIndex}
