@@ -62,25 +62,7 @@ export function BallotPosition({
     }
 
     return <>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} sx={{
-            mb: 2,
-            mt: 2,
-            padding: ".6rem",
-            borderRadius: ".3rem",
-            "&.focus:focus-visible": {
-                outline: "2px solid #1976d2",
-                backgroundColor: "rgba(25, 118, 210, 0.04)"
-            },
-            "&.focus .focus-indicator": {
-                display: "inline-flex"
-            },
-            "&:not(:focus-visible) .focus-indicator": {
-                display: "none"
-            },
-            "&:not(:focus-visible)": {
-                outline: "none"
-            }
-        }}
+        <Grid size={{ xs: 6, sm: 3 }} sx={{ mb: 2, mt: 2, padding: ".6rem", borderRadius: ".3rem" }}
               tabIndex={positionTabIndex}
               onFocus={onFocusPosition}
               className={focussed ? "focus" : ""}
@@ -88,7 +70,7 @@ export function BallotPosition({
         >
             <Grid alignItems="center" container>
                 <Grid size={2}>
-                    <Chip label={position.title[0].toLowerCase()} variant="outlined" className="focus-indicator"/>
+                    <Chip label={position.title[0].toLowerCase()} variant="outlined"/>
                 </Grid>
                 <Grid size="grow"><Typography variant="h4">
                     {position.title}
@@ -104,7 +86,9 @@ export function BallotPosition({
             {position.persons.map((person, personIndex) => (
                 <Grid container key={person.key}>
                     <Grid size={2}>
-                        <Chip label={personIndex + 1} variant="outlined" className="focus-indicator"/>
+                        {focussed &&
+                            <Chip label={personIndex + 1} variant="outlined"/>
+                        }
                     </Grid>
                     <Grid size="auto">
                         <FormControlLabel
@@ -122,8 +106,9 @@ export function BallotPosition({
             ))}
             <Grid container>
                 <Grid size={2}>
-                    <Chip label={'i'} variant="outlined" className="focus-indicator"/>
-                </Grid>
+                    {focussed &&
+                        <Chip label={'i'} variant="outlined"/>
+                    }</Grid>
                 <Grid size="auto">
                     <FormControlLabel
                         control={
