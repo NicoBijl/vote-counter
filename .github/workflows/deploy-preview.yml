@@ -91,5 +91,5 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_VOTE_COUNTER_C8CD5 }}'
           projectId: vote-counter-c8cd5
-          channelId: pr-${{ head_branch }} # This needs logic to get PR number
+          channelId: pr-${{ github.event.workflow_run.head_branch }} # This needs logic to get PR number
           expires: 7d
