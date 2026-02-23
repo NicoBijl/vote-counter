@@ -26,7 +26,7 @@ jobs:
             const prs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head: \`\${headRepo}:\${headBranch}\`,
+              head: headRepo + ":" + headBranch,
               state: 'open'
             });
             if (prs.data.length > 0) {
@@ -108,13 +108,13 @@ jobs:
           script: |
             const marker = '🚀 Preview deployment ready';
             const preview = process.env.PREVIEW_URL || '';
-            const reportLink = preview ? \`\${preview}/reports/index.html\` : null;
+            const reportLink = preview ? preview + "/reports/index.html" : null;
             
             const body = [
               marker,
-              \`- Preview URL: \${preview}\`,
-              \`- Test Reports: \${reportLink ? \`[index](\${reportLink})\` : 'unavailable'}\`
-            ].join('\\n');
+              '- Preview URL: ' + preview,
+              '- Test Reports: ' + (reportLink ? '[index](' + reportLink + ')' : 'unavailable')
+            ].join('\n');
 
             const { owner, repo } = context.repo;
             const issue_number = Number(process.env.PR_NUMBER);
