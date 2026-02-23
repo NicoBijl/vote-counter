@@ -14,7 +14,7 @@ jobs:
   deploy:
     name: Deploy to Firebase
     runs-on: ubuntu-latest
-    if: \${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Get PR Information
         id: pr_info
