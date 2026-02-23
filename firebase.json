@@ -4,7 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "source": ".",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -12,12 +12,9 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "!/reports/**",
         "destination": "/index.html"
       }
-    ],
-    "frameworksBackend": {
-      "region": "europe-west1"
-    }
+    ]
   }
 }
