@@ -177,7 +177,7 @@ jobs:
     if: ${{ always() && github.event.pull_request }}
     steps:
       - name: Post combined report comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           UNIT_STATUS: ${{ needs.unit.result }}
           E2E_STATUS: ${{ needs.e2e.result }}
