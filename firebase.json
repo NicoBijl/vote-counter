@@ -15,9 +15,6 @@
         "source": "!/reports/**",
         "destination": "/index.html"
       }
-    ],
-    "frameworksBackend": {
-      "region": "europe-west1"
-    }
+    ]
   }
 }
