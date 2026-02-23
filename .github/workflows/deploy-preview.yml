@@ -23,34 +23,30 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const run_id = context.payload.workflow_run.id;
-            
-            const run = await github.rest.actions.getWorkflowRun({
-              owner,
-              repo,
-              run_id
-            });
-            
-            const head_sha = run.data.head_sha;
-            console.log("Searching for PRs with head SHA: " + head_sha);
-
+            const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id });
             const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner,
               repo,
-              commit_sha: head_sha
+              commit_sha: run.data.head_sha
             });
-            
             if (prs.data.length > 0) {
-              const pr = prs.data[0];
-              console.log("Found PR #" + pr.number);
-              core.setOutput('number', pr.number);
+              core.setOutput('number', prs.data[0].number);
             } else {
-              core.setFailed("No open PR found for SHA: " + head_sha);
+              core.setFailed('No open PR found for this run');
             }
 
       - uses: actions/checkout@v4
         with:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_branch }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
@@ -82,20 +78,20 @@ jobs:
         run: |
           mkdir -p dist/reports
           {
-            echo "<!doctype html><html><head><meta charset='UTF-8'><title>Test Reports</title></head><body>";
-            echo "<h1>Test Reports</h1>";
-            echo "<ul>";
+            echo "<!doctype html><html><head><meta charset='UTF-8'><title>Test Reports</title></head><body>"
+            echo "<h1>Test Reports</h1>"
+            echo "<ul>"
             if [ -f dist/reports/unit/index.html ]; then
-              echo "<li>Unit tests: <a href='./unit/index.html'>coverage report</a></li>";
+              echo "<li>Unit tests: <a href='./unit/index.html'>coverage report</a></li>"
             else
-              echo "<li>Unit tests: report unavailable</li>";
+              echo "<li>Unit tests: report unavailable</li>"
             fi
             if [ -f dist/reports/e2e/index.html ]; then
-              echo "<li>E2E tests: <a href='./e2e/index.html'>Playwright report</a></li>";
+              echo "<li>E2E tests: <a href='./e2e/index.html'>Playwright report</a></li>"
             else
-              echo "<li>E2E tests: report unavailable</li>";
+              echo "<li>E2E tests: report unavailable</li>"
             fi
-            echo "</ul></body></html>";
+            echo "</ul></body></html>"
           } > dist/reports/index.html
 
       - name: Deploy to Firebase
@@ -118,20 +114,15 @@ jobs:
         with:
           script: |
             const marker = '🚀 Preview deployment ready';
-            const preview = process.env.PREVIEW_URL || '';
-            const reportLink = preview ? preview + "/reports/index.html" : null;
-            
             const body = [
               marker,
-              '- Preview URL: ' + preview,
-              '- Test Reports: ' + (reportLink ? '[index](' + reportLink + ')' : 'unavailable')
+              '- Preview URL: ' + process.env.PREVIEW_URL,
+              '- Test Reports: ' + process.env.PREVIEW_URL + '/reports/index.html'
             ].join('\n');
-
             const { owner, repo } = context.repo;
             const issue_number = Number(process.env.PR_NUMBER);
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
             const existing = comments.find(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
-
             if (existing) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             } else {
