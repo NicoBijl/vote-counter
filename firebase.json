@@ -12,10 +12,6 @@
     ],
     "rewrites": [
       {
-        "source": "/reports/**",
-        "destination": "/reports/index.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
