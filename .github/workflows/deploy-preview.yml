@@ -24,7 +24,6 @@ jobs:
             const { owner, repo } = context.repo;
             const run_id = context.payload.workflow_run.id;
             
-            // 1. Get the workflow run to find the head_sha
             const run = await github.rest.actions.getWorkflowRun({
               owner,
               repo,
@@ -32,9 +31,8 @@ jobs:
             });
             
             const head_sha = run.data.head_sha;
-            console.log(`Searching for PRs with head SHA: ${head_sha}`);
+            console.log("Searching for PRs with head SHA: " + head_sha);
 
-            // 2. Find the PR associated with this SHA
             const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner,
               repo,
@@ -43,10 +41,10 @@ jobs:
             
             if (prs.data.length > 0) {
               const pr = prs.data[0];
-              console.log(`Found PR #${pr.number}`);
+              console.log("Found PR #" + pr.number);
               core.setOutput('number', pr.number);
             } else {
-              core.setFailed(`No open PR found for SHA: ${head_sha}`);
+              core.setFailed("No open PR found for SHA: " + head_sha);
             }
 
       - uses: actions/checkout@v4
