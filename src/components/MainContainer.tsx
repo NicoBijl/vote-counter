@@ -1,9 +1,9 @@
 import * as React from 'react';
-import {styled} from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import MuiDrawer from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
-import MuiAppBar, {AppBarProps as MuiAppBarProps} from '@mui/material/AppBar';
+import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
@@ -13,12 +13,13 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import NavItems from "./NavItems.tsx";
-import {Dashboard} from "./pages/Dashboard.tsx";
-import {Votes} from "./pages/Votes.tsx";
-import {Positions} from "./pages/Positions.tsx";
-import {Results} from "./pages/Results.tsx";
-import {Settings} from "./pages/Settings.tsx";
+import { Routes, Route, useLocation } from 'react-router-dom';  // <-- new imports
+import NavItems from "./NavItems";
+import { Dashboard } from "./pages/Dashboard";
+import { Votes } from "./pages/Votes";
+import { Positions } from "./pages/Positions";
+import { Results } from "./pages/Results";
+import { Settings } from "./pages/Settings";
 
 const drawerWidth: number = 240;
 
@@ -44,7 +45,7 @@ const AppBar = styled(MuiAppBar, {
     }),
 }));
 
-const Drawer = styled(MuiDrawer, {shouldForwardProp: (prop) => prop !== 'open'})(
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
     ({theme, open}) => ({
         '& .MuiDrawer-paper': {
             position: 'relative',
@@ -72,13 +73,19 @@ const Drawer = styled(MuiDrawer, {shouldForwardProp: (prop) => prop !== 'open'})
 
 export default function MainContainer() {
     const [open, setOpen] = React.useState(true);
-    const [page, setPage] = React.useState('dashboard');
+    const location = useLocation();  // <-- get current location for title
     const toggleDrawer = () => {
         setOpen(!open);
     };
-    const onNavClick = (nextPage: string) => {
-        setPage(nextPage)
-    }
+
+    // Derive page title from the current path
+    const getPageTitle = () => {
+        const path = location.pathname;
+        if (path === '/') return 'dashboard';
+        const segment = path.substring(1); // remove leading '/'
+        if (segment.startsWith('votes/')) return 'votes'; // handle /votes/3
+        return segment || 'dashboard';
+    };
 
     return (
         <Box sx={{display: 'flex'}}>
@@ -86,7 +93,7 @@ export default function MainContainer() {
             <AppBar position="absolute" open={open}>
                 <Toolbar
                     sx={{
-                        pr: '24px', // keep right padding when drawer closed
+                        pr: '24px',
                     }}
                 >
                     <IconButton
@@ -127,7 +134,8 @@ export default function MainContainer() {
                 </Toolbar>
                 <Divider/>
                 <List component="nav">
-                    <NavItems onClick={onNavClick}/>
+                    {/* NavItems no longer needs an onClick prop */}
+                    <NavItems />
                 </List>
             </Drawer>
             <Box
@@ -145,17 +153,20 @@ export default function MainContainer() {
                 <Toolbar/>
                 <Container maxWidth={false} sx={{mt: 4, mb: 4}}>
                     <Grid container>
-                        {/* Chart */}
                         <Grid size={{ xs: 12 }}>
-                                <Typography component="h1" variant="h3" color="primary"
-                                            sx={{textTransform: "capitalize"}}>
-                                    {page}
-                                </Typography>
-                                {(page == 'dashboard') && <Dashboard/>}
-                                {(page == 'results') && <Results/>}
-                                {(page == 'positions') && <Positions/>}
-                                {(page == 'votes') && <Votes/>}
-                                {(page == 'settings') && <Settings/>}
+                            <Typography component="h1" variant="h3" color="primary"
+                                        sx={{textTransform: "capitalize"}}>
+                                {getPageTitle()}
+                            </Typography>
+                            {/* Define routes */}
+                            <Routes>
+                                <Route path="/" element={<Dashboard />} />
+                                <Route path="/settings" element={<Settings />} />
+                                <Route path="/positions" element={<Positions />} />
+                                <Route path="/results" element={<Results />} />
+                                <Route path="/votes" element={<Votes />} />
+                                <Route path="/votes/:voteIndex" element={<Votes />} />
+                            </Routes>
                         </Grid>
                     </Grid>
                 </Container>
@@ -163,5 +174,3 @@ export default function MainContainer() {
         </Box>
     );
 }
-
-

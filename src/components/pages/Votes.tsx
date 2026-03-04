@@ -21,6 +21,7 @@ import Paper from "@mui/material/Paper";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useHotkeys} from "react-hotkeys-hook";
+import { useParams, useNavigate } from 'react-router-dom';  // <-- added
 
 export interface BallotPositionProps {
     position: Position,
@@ -142,6 +143,9 @@ export function BallotPosition({
 }
 
 export function Votes() {
+    const { voteIndex } = useParams();                // <-- added: get vote index from URL
+    const navigate = useNavigate();                    // <-- added
+
     const {
         ballots,
         currentBallotIndex,
@@ -155,6 +159,47 @@ export function Votes() {
     const {positions} = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+    // <-- added: sync URL param to store
+    useEffect(() => {
+        if (!voteIndex) {
+            // No voteIndex in URL -> go to first ballot
+            if (currentBallotIndex !== 0) {
+                setVoteIndex(0);
+            }
+            return;
+        }
+
+        const urlIndex = parseInt(voteIndex, 10);
+        if (isNaN(urlIndex) || urlIndex < 1) {
+            // Invalid index -> go to first ballot and update URL
+            navigate('/votes/1', { replace: true });
+            return;
+        }
+
+        // Clamp to valid range
+        const maxIndex = ballots.length;
+        const validIndex = Math.min(Math.max(urlIndex, 1), maxIndex);
+        if (validIndex !== urlIndex) {
+            // Out of range -> replace with valid index
+            navigate(`/votes/${validIndex}`, { replace: true });
+        } else {
+            // Valid index, update store if needed (convert to 0‑based)
+            const newStoreIndex = validIndex - 1;
+            if (newStoreIndex !== currentBallotIndex) {
+                setVoteIndex(newStoreIndex);
+            }
+        }
+    }, [voteIndex, ballots.length, currentBallotIndex, navigate, setVoteIndex]);
+
+    // <-- added: update URL when store changes (e.g., after removal)
+    useEffect(() => {
+        const expectedUrlIndex = currentBallotIndex + 1;
+        const currentUrlIndex = voteIndex ? parseInt(voteIndex, 10) : null;
+        if (currentUrlIndex !== expectedUrlIndex) {
+            navigate(`/votes/${expectedUrlIndex}`, { replace: true });
+        }
+    }, [currentBallotIndex, navigate, voteIndex]);
 
     function focusPreviousPosition() {
         if (focusPosition) {
@@ -196,16 +241,21 @@ export function Votes() {
         setBallotVote(currentBallotIndex, position, person, checked)
     }
 
+    // <-- modified: use navigation instead of direct store update
     function handleVoteChange(_event: ChangeEvent<unknown>, pageNumber: number) {
-        setVoteIndex(pageNumber - 1)
+        navigate(`/votes/${pageNumber}`);
     }
 
     function handleDialogClose() {
         setIsDialogOpen(false)
     }
 
+    // <-- modified: after removal, navigate to updated index
     function remove() {
         removeBallot(currentVote!);
+        // Get the new index from the store (Zustand updates synchronously)
+        const newIndex = useBallotStore.getState().currentBallotIndex;
+        navigate(`/votes/${newIndex + 1}`);
         setIsDialogOpen(false)
     }
 
@@ -220,7 +270,22 @@ export function Votes() {
         }
     }
 
-    // setup hotkeys for numbers, when a position is focussed, the numbers will select the person by index.
+    // <-- added: navigation handlers for next/previous
+    const handleNextVote = () => {
+        const nextIndex = currentBallotIndex + 2; // next ballot 1‑based
+        if (nextIndex <= ballots.length) {
+            navigate(`/votes/${nextIndex}`);
+        }
+    };
+
+    const handlePreviousVote = () => {
+        const prevIndex = currentBallotIndex; // currentBallotIndex is 0‑based, so 1‑based previous = currentBallotIndex
+        if (prevIndex >= 1) {
+            navigate(`/votes/${prevIndex}`);
+        }
+    };
+
+    // Hotkeys – updated to use the new handlers
     useHotkeys('1,2,3,4,5,6,7,8,9', (event) => {
         const index = parseInt(event.key) - 1;
         if (focusPosition && focusPosition.persons[index]) {
@@ -228,20 +293,16 @@ export function Votes() {
             toggleChecked(focusPosition, focusPosition.persons[index].key);
         }
     }, {enableOnFormTags: true})
-    // invalid
     useHotkeys("i", () => {
         if (focusPosition) {
             toggleChecked(focusPosition, "invalid");
         }
     }, {enableOnFormTags: true})
-    useHotkeys("n", () => {
-        nextVote()
-    }, {enableOnFormTags: true})
-
-    useHotkeys("ArrowUp", previousVote, {enableOnFormTags: true})
+    useHotkeys("n", handleNextVote, {enableOnFormTags: true})                   // <-- changed
+    useHotkeys("ArrowUp", handlePreviousVote, {enableOnFormTags: true})         // <-- changed
     useHotkeys("ArrowDown", () => {
         if (currentBallotIndex !== ballots.length - 1) {
-            nextVote()
+            handleNextVote();                                                    // <-- changed
         }
     }, {enableOnFormTags: true})
     useHotkeys("ArrowLeft", focusPreviousPosition, {enableOnFormTags: true})
@@ -281,7 +342,7 @@ export function Votes() {
                                     aria-label="previous vote"
                                     tabIndex={500}
                                     disabled={currentBallotIndex == 0}
-                                    onClick={previousVote}>
+                                    onClick={handlePreviousVote}>           {/* <-- changed */}
                                 <KeyboardArrowLeftIcon/>
                             </Button>
                         </span>
@@ -293,7 +354,6 @@ export function Votes() {
                             <Typography variant="h2" sx={{textAlign: "center"}}>Vote:
                                 # {currentBallotIndex + 1}</Typography>
                         </Grid>
-
 
                         {positions.map((position, index) =>
                             <BallotPosition key={position.key}
@@ -310,7 +370,7 @@ export function Votes() {
                         )}
                         <Grid container size={12} justifyContent="space-evenly">
                             <Tooltip title="Next ballot (N)">
-                                <Button onClick={nextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}
+                                <Button onClick={handleNextVote} variant="contained" color="primary" sx={{mt: 2, mb: 2}}   // <-- changed
                                         tabIndex={2000}
                                 >
                                     Next Ballot
@@ -337,7 +397,7 @@ export function Votes() {
                         <span>
                             <Button variant="outlined" tabIndex={3000} sx={{height: '100%', width: '100%'}}
                                     aria-label="next vote"
-                                    onClick={nextVote}
+                                    onClick={handleNextVote}                {/* <-- changed */}
                                     disabled={currentBallotIndex == ballots.length - 1}>
                                 <KeyboardArrowRightIcon/>
                             </Button>
@@ -351,7 +411,7 @@ export function Votes() {
                         color="primary"
                         page={currentBallotIndex + 1}
                         showFirstButton showLastButton
-                        onChange={handleVoteChange}
+                        onChange={handleVoteChange}                         {/* <-- now uses navigate */}
                         siblingCount={3}
                         sx={{mt: 2, mb: 4, justifyContent: "center", display: "flex"}}
                     />
