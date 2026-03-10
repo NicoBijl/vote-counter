@@ -1,4 +1,5 @@
-import { useBallotStore, createNewBallot } from '../useBallotStore';
+import { useBallotStore, createNewBallot, Ballot } from '../useBallotStore';
+import { PositionKey, PersonKey } from '../types';
 import { act } from '@testing-library/react';
 
 describe('useBallotStore', () => {
@@ -60,7 +61,10 @@ describe('useBallotStore', () => {
     });
 
     it('should save a vote (replace existing ballot by index)', () => {
-        const updatedBallot = { index: 0, vote: [{ position: 'pos1', person: 'pers1' }] } as any;
+        const updatedBallot: Ballot = {
+            index: 0,
+            vote: [{ position: 'pos1' as PositionKey, person: 'pers1' as PersonKey }]
+        };
         act(() => {
             useBallotStore.getState().saveVote(updatedBallot);
         });
@@ -71,7 +75,7 @@ describe('useBallotStore', () => {
 
     it('should handle setBallotVote - adding a vote', () => {
         act(() => {
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'pers1', true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'pers1' as PersonKey, true);
         });
         const state = useBallotStore.getState();
         expect(state.ballots[0].vote).toContainEqual({ position: 'pos1', person: 'pers1' });
@@ -79,8 +83,8 @@ describe('useBallotStore', () => {
 
     it('should handle setBallotVote - invalid vote logic', () => {
         act(() => {
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'pers1', true);
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'invalid', true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'pers1' as PersonKey, true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'invalid' as PersonKey, true);
         });
         const state = useBallotStore.getState();
         const pos1Votes = state.ballots[0].vote.filter(v => v.position === 'pos1');
@@ -90,8 +94,8 @@ describe('useBallotStore', () => {
 
     it('should handle setBallotVote - removing invalid when a normal person is checked', () => {
         act(() => {
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'invalid', true);
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'pers1', true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'invalid' as PersonKey, true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'pers1' as PersonKey, true);
         });
         const state = useBallotStore.getState();
         const pos1Votes = state.ballots[0].vote.filter(v => v.position === 'pos1');
@@ -101,8 +105,8 @@ describe('useBallotStore', () => {
 
     it('should handle setBallotVote - removing a vote', () => {
         act(() => {
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'pers1', true);
-            useBallotStore.getState().setBallotVote(0, 'pos1', 'pers1', false);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'pers1' as PersonKey, true);
+            useBallotStore.getState().setBallotVote(0, 'pos1' as PositionKey, 'pers1' as PersonKey, false);
         });
         const state = useBallotStore.getState();
         expect(state.ballots[0].vote).not.toContainEqual({ position: 'pos1', person: 'pers1' });
@@ -155,7 +159,7 @@ describe('useBallotStore', () => {
 
     it('should initialize missing ballot in setBallotVote', () => {
         act(() => {
-            useBallotStore.getState().setBallotVote(5, 'pos1', 'pers1', true);
+            useBallotStore.getState().setBallotVote(5, 'pos1' as PositionKey, 'pers1' as PersonKey, true);
         });
         const state = useBallotStore.getState();
         const b5 = state.ballots.find(b => b.index === 5);
@@ -173,10 +177,10 @@ describe('useBallotStore', () => {
     });
 
     it('should import ballots', () => {
-        const newBallots = [
+        const newBallots: Ballot[] = [
             { index: 0, vote: [] },
-            { index: 1, vote: [{ position: 'p', person: 'v' }] }
-        ] as any;
+            { index: 1, vote: [{ position: 'p' as PositionKey, person: 'v' as PersonKey }] }
+        ];
         act(() => {
             useBallotStore.getState().importBallots(newBallots);
         });
