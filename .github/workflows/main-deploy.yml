@@ -42,8 +42,8 @@ jobs:
           author_email: action@github.com
           message: 'chore: update coverage badge'
           add: 'coverage.svg'
-          branch: badges
-          push: origin badges --force
+          new_branch: badges
+          push: true
         continue-on-error: true
 
       - name: Cache coverage baseline for PRs
