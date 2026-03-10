@@ -1,6 +1,6 @@
 # Vote Counter App
 
-![Coverage](https://raw.githubusercontent.com/NicoBijl/vote-counter/main/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/NicoBijl/vote-counter/badges/coverage.svg)
 
 The Vote Counter App is a robust and user-friendly application built using React with Vite, designed to streamline and
 simplify the process of counting votes in elections. This application is tailored for organizations and groups needing

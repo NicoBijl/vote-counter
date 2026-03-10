@@ -33,6 +33,7 @@ jobs:
 
       - name: Generate coverage badge
         run: npx coverage-badges-cli --source coverage/coverage-summary.json --output coverage.svg
+        continue-on-error: true
 
       - name: Commit badge to repository
         uses: EndBug/add-and-commit@v9
@@ -41,6 +42,9 @@ jobs:
           author_email: action@github.com
           message: 'chore: update coverage badge'
           add: 'coverage.svg'
+          branch: badges
+          push: origin badges --force
+        continue-on-error: true
 
       - name: Cache coverage baseline for PRs
         if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
