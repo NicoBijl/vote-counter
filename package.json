@@ -10,6 +10,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "jest --config jest.config.js",
+    "test:coverage": "jest --config jest.config.js --coverage --coverageReporters=json-summary --coverageReporters=lcov",
     "test:e2e": "playwright test",
     "test:e2e:cli": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test",
     "test:e2e:chrome": "playwright test --project=chromium",

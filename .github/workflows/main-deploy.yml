@@ -28,8 +28,19 @@ jobs:
         run: npm run build
 
       - name: Run tests with coverage
-        run: npm run test -- --coverage --coverageReporters=json-summary
+        run: npm run test:coverage
         continue-on-error: true
+
+      - name: Generate coverage badge
+        run: npx coverage-badges-cli --source coverage/coverage-summary.json --output coverage.svg
+
+      - name: Commit badge to repository
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Action
+          author_email: action@github.com
+          message: 'chore: update coverage badge'
+          add: 'coverage.svg'
 
       - name: Cache coverage baseline for PRs
         if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
