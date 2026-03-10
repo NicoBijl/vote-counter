@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   security-events: write
 
 jobs:
@@ -27,9 +27,31 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
-        run: npm run test
+      - name: Run tests with coverage
+        run: npm run test:coverage
         continue-on-error: true
+
+      - name: Generate coverage badge
+        run: npx coverage-badges-cli --source coverage/coverage-summary.json --output coverage.svg
+        continue-on-error: true
+
+      - name: Commit badge to repository
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Action
+          author_email: action@github.com
+          message: 'chore: update coverage badge'
+          add: 'coverage.svg'
+          new_branch: badges
+          push: true
+        continue-on-error: true
+
+      - name: Cache coverage baseline for PRs
+        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: coverage/coverage-summary.json
+          key: coverage-baseline-main-${{ github.sha }}
 
   security:
     runs-on: ubuntu-latest
