@@ -1,4 +1,4 @@
-# Vote Counter App
+# Vote Counter App 
 
 ![Coverage](https://raw.githubusercontent.com/NicoBijl/vote-counter/main/coverage.svg)
 
