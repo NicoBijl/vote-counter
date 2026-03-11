@@ -21,8 +21,7 @@ export function CollaborationModal() {
         syncStatus,
         startPairing, 
         stopPairing, 
-        setPeerKey,
-        setPeerId 
+        setPeerKey
     } = useCollaborationStore();
     
     const [inputKey, setInputKey] = useState('');
@@ -39,11 +38,7 @@ export function CollaborationModal() {
         }
         
         const normalizedInput = inputKey.toUpperCase().replace(/\s/g, '');
-        
-        // In a real implementation, this would trigger WebRTC connection
-        // For now, we simulate the connection
         setPeerKey(normalizedInput);
-        setPeerId(`peer-${normalizedInput}`);
         setError('');
     };
     
@@ -128,6 +123,12 @@ export function CollaborationModal() {
                         }}
                     />
                 </Box>
+                
+                {syncStatus === 'incoming' && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                        Connection incoming! Please enter your partner's key to establish secure link.
+                    </Alert>
+                )}
                 
                 {syncStatus === 'connecting' && (
                     <Alert severity="info" sx={{ mb: 2 }}>

@@ -1,7 +1,7 @@
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
 
-export type SyncStatus = 'disconnected' | 'connecting' | 'synced' | 'syncing' | 'out-of-sync';
+export type SyncStatus = 'disconnected' | 'connecting' | 'incoming' | 'synced' | 'syncing' | 'out-of-sync';
 
 interface CollaborationState {
     // Connection state
@@ -9,6 +9,7 @@ interface CollaborationState {
     myKey: string | null;
     peerKey: string | null;
     peerId: string | null;
+    isIncoming: boolean;
     
     // Sync state
     syncStatus: SyncStatus;
@@ -22,6 +23,7 @@ interface CollaborationState {
     setPeerId: (id: string) => void;
     setSyncStatus: (status: SyncStatus) => void;
     setMismatchDetails: (details: string[]) => void;
+    setIncoming: (incoming: boolean) => void;
     disconnect: () => void;
 }
 
@@ -42,6 +44,7 @@ export const useCollaborationStore = create<CollaborationState>()(persist(
         myKey: null,
         peerKey: null,
         peerId: null,
+        isIncoming: false,
         syncStatus: 'disconnected',
         mismatchDetails: [],
         lastSyncTimestamp: 0,
@@ -51,6 +54,7 @@ export const useCollaborationStore = create<CollaborationState>()(persist(
             myKey: generatePairingKey(),
             peerKey: null,
             peerId: null,
+            isIncoming: false,
             syncStatus: 'disconnected',
             mismatchDetails: [],
         }),
@@ -60,6 +64,7 @@ export const useCollaborationStore = create<CollaborationState>()(persist(
             myKey: null,
             peerKey: null,
             peerId: null,
+            isIncoming: false,
             syncStatus: 'disconnected',
             mismatchDetails: [],
         }),
@@ -75,19 +80,24 @@ export const useCollaborationStore = create<CollaborationState>()(persist(
             lastSyncTimestamp: Date.now()
         }),
         
-        setSyncStatus: (status: SyncStatus) => set({ 
+        setSyncStatus: (status: SyncStatus) => set((state) => ({ 
             syncStatus: status,
-            lastSyncTimestamp: status === 'synced' ? Date.now() : undefined
-        }),
+            lastSyncTimestamp: status === 'synced' ? Date.now() : state.lastSyncTimestamp
+        })),
         
         setMismatchDetails: (details: string[]) => set({ 
             mismatchDetails: details 
+        }),
+        
+        setIncoming: (incoming: boolean) => set({
+            isIncoming: incoming
         }),
         
         disconnect: () => set({
             isActive: false,
             peerId: null,
             peerKey: null,
+            isIncoming: false,
             syncStatus: 'disconnected',
             mismatchDetails: [],
         }),
@@ -98,6 +108,7 @@ export const useCollaborationStore = create<CollaborationState>()(persist(
             // Only persist connection info for session recovery
             isActive: state.isActive,
             myKey: state.myKey,
+            peerKey: state.peerKey,
             peerId: state.peerId,
             syncStatus: state.syncStatus,
         }),
