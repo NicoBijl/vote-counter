@@ -1,3 +1,4 @@
+import {useEffect, useState} from "react";
 import {Chip} from "@mui/material";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -34,8 +35,9 @@ function getStatusConfig(status: SyncStatus): {
                 icon: <ErrorIcon />
             };
         case 'connecting':
+        case 'incoming':
             return { 
-                label: 'Connecting...', 
+                label: status === 'incoming' ? 'Connection incoming' : 'Connecting...', 
                 color: 'warning',
                 icon: <SyncIcon className="sync-spin" />
             };
@@ -50,7 +52,20 @@ function getStatusConfig(status: SyncStatus): {
 
 export function SyncIndicator({ showDetails = false }: SyncIndicatorProps) {
     const { syncStatus, mismatchDetails } = useCollaborationStore();
-    const config = getStatusConfig(syncStatus);
+    const [debouncedStatus, setDebouncedStatus] = useState<SyncStatus>(syncStatus);
+
+    useEffect(() => {
+        if (syncStatus === 'out-of-sync') {
+            const timer = setTimeout(() => {
+                setDebouncedStatus('out-of-sync');
+            }, 5000);
+            return () => clearTimeout(timer);
+        } else {
+            setDebouncedStatus(syncStatus);
+        }
+    }, [syncStatus]);
+
+    const config = getStatusConfig(debouncedStatus);
     
     const label = showDetails && mismatchDetails.length > 0
         ? `${config.label}: Ballots ${mismatchDetails.join(', ')} differ`

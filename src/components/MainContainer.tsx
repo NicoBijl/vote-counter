@@ -22,6 +22,7 @@ import {Results} from "./pages/Results.tsx";
 import {Settings} from "./pages/Settings.tsx";
 import {CollaborationModal} from "./CollaborationModal.tsx";
 import {SyncIndicator} from "./SyncIndicator.tsx";
+import {useWebRTC} from "../hooks/useWebRTC.ts";
 
 const drawerWidth: number = 240;
 
@@ -74,6 +75,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 );
 
 export default function MainContainer() {
+    useWebRTC();
     const [open, setOpen] = React.useState(true);
     const location = useLocation();  // <-- get current location for title
     const toggleDrawer = () => {
