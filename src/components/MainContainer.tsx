@@ -19,6 +19,8 @@ import {Votes} from "./pages/Votes.tsx";
 import {Positions} from "./pages/Positions.tsx";
 import {Results} from "./pages/Results.tsx";
 import {Settings} from "./pages/Settings.tsx";
+import {CollaborationModal} from "./CollaborationModal.tsx";
+import {SyncIndicator} from "./SyncIndicator.tsx";
 
 const drawerWidth: number = 240;
 
@@ -110,6 +112,8 @@ export default function MainContainer() {
                     >
                         Vote Counter App
                     </Typography>
+                    <SyncIndicator />
+                    <CollaborationModal />
                 </Toolbar>
             </AppBar>
             <Drawer variant="permanent" open={open}>
