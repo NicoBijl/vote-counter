@@ -12,7 +12,7 @@ import {
     Tooltip
 } from "@mui/material";
 import { PersonKey, Position, PositionKey } from "../../types.ts";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -212,7 +212,7 @@ export function Votes() {
             setFocusPosition(positions[updatedIndex]);
         }
     }
-    useEffect(() => {
+    useLayoutEffect(() => {
         console.log("currentBallotIndex updated");
 
         setFocusPosition(prev => {
