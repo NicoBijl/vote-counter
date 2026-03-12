@@ -21,6 +21,10 @@ jobs:
       statements: ${{ steps.coverage_summary.outputs.statements }}
       branches: ${{ steps.coverage_summary.outputs.branches }}
       functions: ${{ steps.coverage_summary.outputs.functions }}
+      base_lines: ${{ steps.baseline_summary.outputs.lines }}
+      base_statements: ${{ steps.baseline_summary.outputs.statements }}
+      base_branches: ${{ steps.baseline_summary.outputs.branches }}
+      base_functions: ${{ steps.baseline_summary.outputs.functions }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
@@ -29,6 +33,40 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+      - name: Restore baseline coverage from main
+        id: baseline_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: coverage/coverage-summary.json
+          key: coverage-baseline-main-
+          restore-keys: |
+            coverage-baseline-main-
+      - name: Extract baseline coverage
+        id: baseline_summary
+        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const summaryPath = 'coverage/coverage-summary.json';
+          if (!fs.existsSync(summaryPath)) {
+            console.log('baseline coverage-summary.json not found');
+            process.exit(0);
+          }
+          const total = JSON.parse(fs.readFileSync(summaryPath, 'utf8')).total;
+          const toPct = (section) => Number.parseFloat((section?.pct ?? 0).toFixed(2));
+          const outputs = {
+            lines: toPct(total.lines),
+            statements: toPct(total.statements),
+            branches: toPct(total.branches),
+            functions: toPct(total.functions),
+          };
+          for (const [key, value] of Object.entries(outputs)) {
+            console.log(`baseline ${key}=${value}`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+          }
+          EOF
+      - name: Remove baseline file before PR coverage run
+        run: rm -f coverage/coverage-summary.json
       - name: Run unit tests with coverage
         id: unit_tests
         run: npm run test -- --coverage --coverageReporters=lcov --coverageReporters=json-summary
@@ -57,7 +95,7 @@ jobs:
           EOF
       - name: Upload coverage artifact
         if: ${{ always() && hashFiles('coverage/lcov-report/index.html') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-report
           path: coverage/lcov-report
@@ -78,7 +116,7 @@ jobs:
         with:
           extra_args: --only-verified
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -88,7 +126,7 @@ jobs:
           exit-code: 0
       - name: Run Trivy vulnerability scanner in repo mode (JSON)
         id: trivy_json
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -137,7 +175,7 @@ jobs:
         run: npm run test:e2e:cli:chrome
       - name: Upload Playwright report
         if: ${{ always() && hashFiles('playwright-report/index.html') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report
@@ -157,7 +195,7 @@ jobs:
       - name: Build app
         run: npm run build
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist
@@ -188,6 +226,10 @@ jobs:
           COV_BRANCHES: ${{ needs.unit.outputs.branches }}
           COV_FUNCTIONS: ${{ needs.unit.outputs.functions }}
           COV_STATEMENTS: ${{ needs.unit.outputs.statements }}
+          BASE_COV_LINES: ${{ needs.unit.outputs.base_lines }}
+          BASE_COV_BRANCHES: ${{ needs.unit.outputs.base_branches }}
+          BASE_COV_FUNCTIONS: ${{ needs.unit.outputs.base_functions }}
+          BASE_COV_STATEMENTS: ${{ needs.unit.outputs.base_statements }}
         with:
           script: |
             const marker = '🧪 Test reports for this PR';
@@ -200,22 +242,49 @@ jobs:
               functions: process.env.COV_FUNCTIONS,
               statements: process.env.COV_STATEMENTS,
             };
+            const baseCov = {
+              lines: process.env.BASE_COV_LINES,
+              branches: process.env.BASE_COV_BRANCHES,
+              functions: process.env.BASE_COV_FUNCTIONS,
+              statements: process.env.BASE_COV_STATEMENTS,
+            };
             const trivy = process.env.TRIVY_SUMMARY || 'unavailable';
+            const hasBaseline = Object.values(baseCov).some(v => v !== '' && v != null);
+            const formatDelta = (current, baseline) => {
+              const cur = parseFloat(current);
+              const base = parseFloat(baseline);
+              if (isNaN(cur) || isNaN(base)) return '';
+              const diff = cur - base;
+              if (Math.abs(diff) < 0.01) return ' (= 0%)';
+              const sign = diff > 0 ? '+' : '';
+              const icon = diff > 0 ? '▲' : '▼';
+              return ` (${icon} ${sign}${diff.toFixed(2)}%)`;
+            };
             const formatCov = () => {
               const entries = Object.entries(cov).filter(([, v]) => v !== '' && v != null);
               if (!entries.length) return 'coverage unavailable';
-              return entries.map(([k, v]) => `${k}: ${v}%`).join(', ');
+              return entries.map(([k, v]) => {
+                const delta = hasBaseline ? formatDelta(v, baseCov[k]) : '';
+                return `${k}: ${v}%${delta}`;
+              }).join(', ');
             };
             const lines = [
               marker,
               `- Build: **${buildStatus}**`,
               `- Unit tests: **${unitStatus}**`,
               `  - Coverage: ${formatCov()}`,
+            ];
+            if (hasBaseline) {
+              lines.push(`  - _Baseline: main branch_`);
+            } else {
+              lines.push(`  - _No baseline available yet (will appear after first merge to main)_`);
+            }
+            lines.push(
               `- E2E tests: **${e2eStatus}**`,
               `- Security (Trivy/Trufflehog): **${process.env.SECURITY_STATUS || 'unknown'}** — ${trivy}`,
               `---`,
               `_Note: Preview deployment will start once checks pass._`
-            ];
+            );
             const body = lines.join('\n');
 
             const { owner, repo } = context.repo;
