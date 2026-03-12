@@ -4,7 +4,7 @@ test.describe('Results Page', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the results page by clicking the nav item
     await page.goto('http://localhost:5173');
-    await page.getByRole('button', { name: 'Results' }).click();
+    await page.getByRole('link', { name: 'Results' }).click();
   });
 
   test('should display the results page with correct title', async ({ page }) => {
