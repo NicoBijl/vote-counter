@@ -148,56 +148,37 @@ export function Votes() {
 
     const {
         ballots,
-        currentBallotIndex,
         removeBallot,
-        setVoteIndex,
+        nextVote,
         setBallotVote
     } = useBallotStore()
-    const currentVote = useBallotStore(state => state.ballots.find(b => b.index == state.currentBallotIndex))
+    
+    // Derive currentBallotIndex from URL
+    const currentBallotIndex = voteIndex ? Math.max(0, parseInt(voteIndex, 10) - 1) : 0;
+    
+    const currentVote = useBallotStore(state => state.ballots.find(b => b.index == currentBallotIndex))
     const { positions } = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    // <-- added: sync URL param to store
+    // Sync URL param: handle missing or invalid voteIndex
     useEffect(() => {
         if (!voteIndex) {
-            // No voteIndex in URL -> go to first ballot
-            if (currentBallotIndex !== 0) {
-                setVoteIndex(0);
-            }
+            navigate('/votes/1', { replace: true });
             return;
         }
 
         const urlIndex = parseInt(voteIndex, 10);
         if (isNaN(urlIndex) || urlIndex < 1) {
-           
             navigate('/votes/1', { replace: true });
             return;
         }
 
-   
         const maxIndex = ballots.length;
-        const validIndex = Math.min(Math.max(urlIndex, 1), maxIndex);
-        if (validIndex !== urlIndex) {
-           
-            navigate(`/votes/${validIndex}`, { replace: true });
-        } else {
-          
-            const newStoreIndex = validIndex - 1;
-            if (newStoreIndex !== currentBallotIndex) {
-                setVoteIndex(newStoreIndex);
-            }
+        if (urlIndex > maxIndex) {
+            navigate(`/votes/${maxIndex}`, { replace: true });
         }
-    }, [voteIndex, ballots.length, currentBallotIndex, navigate, setVoteIndex]);
-
-   
-    useEffect(() => {
-        const expectedUrlIndex = currentBallotIndex + 1;
-        const currentUrlIndex = voteIndex ? parseInt(voteIndex, 10) : null;
-        if (currentUrlIndex !== expectedUrlIndex) {
-            navigate(`/votes/${expectedUrlIndex}`, { replace: true });
-        }
-    }, [currentBallotIndex, navigate, voteIndex]);
+    }, [voteIndex, ballots.length, navigate]);
 
     function focusPreviousPosition() {
         if (focusPosition) {
@@ -245,7 +226,6 @@ export function Votes() {
         setBallotVote(currentBallotIndex, position, person, checked)
     }
 
-    // <-- modified: use navigation instead of direct store update
     function handleVoteChange(_event: ChangeEvent<unknown>, pageNumber: number) {
         navigate(`/votes/${pageNumber}`);
     }
@@ -256,27 +236,31 @@ export function Votes() {
 
    
     function remove() {
-        removeBallot(currentVote!);
+        if (!currentVote) return;
         
-        const newIndex = useBallotStore.getState().currentBallotIndex;
+        removeBallot(currentVote);
+        
+        // After removal, navigate to a valid index
+        // If we removed the last ballot, move to the new last ballot
+        // If we removed a middle ballot, stay at the same index (which now has the next ballot)
+        const newIndex = Math.max(0, Math.min(currentBallotIndex, ballots.length - 2));
         navigate(`/votes/${newIndex + 1}`);
         setIsDialogOpen(false)
     }
 
     function openRemoveConfirmationDialog() {
-        if (isDialogOpen) {
-            remove();
-        } else {
-            if (currentBallotIndex == 0) {
-                return 
-            }
-            setIsDialogOpen(true);
+        if (currentBallotIndex == 0) {
+            return 
         }
+        setIsDialogOpen(true);
     }
 
     const handleNextVote = () => {
         const nextIndex = currentBallotIndex + 2; 
         if (nextIndex <= ballots.length) {
+            navigate(`/votes/${nextIndex}`);
+        } else {
+            nextVote(currentBallotIndex);
             navigate(`/votes/${nextIndex}`);
         }
     };
@@ -332,7 +316,7 @@ export function Votes() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleDialogClose}>Cancel</Button>
-                    <Button onClick={remove} color={"error"} autoFocus>
+                    <Button onClick={remove} color={"error"} autoFocus id="confirm-remove-button">
                         Remove Ballot
                     </Button>
                 </DialogActions>
@@ -375,17 +359,17 @@ export function Votes() {
                             <Tooltip title="Next ballot (N)">
 
                                 <Button onClick={handleNextVote} variant="contained" color="primary" sx={{ mt: 2, mb: 2 }} tabIndex={2000}>
-                                    {/* <-- changed */}
                                     Next Ballot
                                 </Button>
                             </Tooltip>
                             <Tooltip title="Remove ballot (Backspace)">
                                 <span>
                                     <Button disabled={currentBallotIndex == 0}
-                                        onClick={openRemoveConfirmationDialog}
+                                        onClick={remove}
                                         variant="outlined" color="error"
                                         sx={{ mt: 2, mb: 2 }}
                                         tabIndex={2000}
+                                        id="remove-ballot-button"
                                     >
                                         Remove Ballot
                                     </Button>

@@ -12,11 +12,9 @@ const mockPositionsStore = {
 const mockBallotStore = {
     ballots: [] as Ballot[],
     removeAllBallots: jest.fn(),
-    currentBallotIndex: 0,
     removeBallot: jest.fn(),
     nextVote: jest.fn(),
-    previousVote: jest.fn(),
-    setVoteIndex: jest.fn(),
+    saveVote: jest.fn(),
     setBallotVote: jest.fn(),
     importBallots: jest.fn()
 };

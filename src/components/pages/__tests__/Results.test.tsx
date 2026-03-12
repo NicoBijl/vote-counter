@@ -12,11 +12,9 @@ const mockPositionsState = {
 
 const mockBallotState = {
     ballots: [] as Ballot[],
-    currentBallotIndex: 0,
     removeBallot: jest.fn(),
     nextVote: jest.fn(),
-    previousVote: jest.fn(),
-    setVoteIndex: jest.fn(),
+    saveVote: jest.fn(),
     setBallotVote: jest.fn(),
     importBallots: jest.fn(),
     removeAllBallots: jest.fn()
