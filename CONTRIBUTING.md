@@ -18,7 +18,4 @@ Thank you for your interest in contributing to Vote Counter!
 ### End-to-End (E2E) Testing
 We use Playwright for E2E testing. 
 - Always ensure the development server is running (`npm run dev`) before running E2E tests.
-- When running tests in an automated environment (CI, AI agents, CLI), use the optimized script:
-  ```bash
-  npm run test:e2e:cli:chrome
-  ```
+- When running tests in an automated environment (CI, AI agents, CLI), use the optimized script: `npm run test:e2e:cli:chrome`

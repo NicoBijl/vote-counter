@@ -8,7 +8,7 @@ test.describe('Final Application Validation', () => {
         // Wait for the application to load
         await page.waitForLoadState('networkidle');
 
-        await page.getByRole('button', {name: 'Settings'}).click();
+        await page.getByRole('link', {name: 'Settings'}).click();
         await page.waitForLoadState('networkidle');
 
         const positionsFileInput = page.locator('input[type="file"][id="importPositions"]');
@@ -18,7 +18,10 @@ test.describe('Final Application Validation', () => {
         await votesFileInput.setInputFiles('e2e/files/vote-counter-ballots-2025-10-17T13_26_03.095Z.json');
 
         // Navigate to Results page where imported vote data should be visible
-        await page.getByRole('button', {name: 'Results'}).click();
+        await page.getByRole('link', {name: 'Results'}).click();
+        
+        // Wait for results to be visible
+        await expect(page.getByText('Person 01')).toBeVisible();
 
         // Verify that the imported vote data is displayed in Results page
         // This confirms that our test data was properly loaded and processed
@@ -32,7 +35,7 @@ test.describe('Final Application Validation', () => {
         await expect(page.getByText('Electoral Divisor').first()).toBeVisible();
 
         // Navigate to Positions page to verify imported positions
-        await page.getByRole('button', {name: 'Positions'}).click();
+        await page.getByRole('link', {name: 'Positions'}).click();
 
         // Verify that the expected positions from our test file are displayed
         await expect(page.getByText('Scriba').first()).toBeVisible();
