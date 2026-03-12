@@ -16,11 +16,9 @@ jest.mock('react-router-dom', () => ({
 // Create store states
 const mockBallotState = {
     ballots: [] as Ballot[],
-    currentBallotIndex: 0,
     removeBallot: jest.fn(),
     nextVote: jest.fn(),
-    previousVote: jest.fn(),
-    setVoteIndex: jest.fn(),
+    saveVote: jest.fn(),
     setBallotVote: jest.fn()
 };
 
@@ -66,14 +64,11 @@ describe('Votes', () => {
         mockBallotState.ballots = [
             { id: '1', index: 0, vote: [] }
         ];
-        mockBallotState.currentBallotIndex = 0;
         mockPositionsState.positions = [mockPosition];
 
         // Reset mock functions
         mockBallotState.removeBallot.mockClear();
         mockBallotState.nextVote.mockClear();
-        mockBallotState.previousVote.mockClear();
-        mockBallotState.setVoteIndex.mockClear();
         mockBallotState.setBallotVote.mockClear();
         mockPositionsState.setPositions.mockClear();
         mockNavigate.mockClear();
@@ -116,26 +111,18 @@ describe('Votes', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/votes/2');
     });
 
-    it('shows remove ballot confirmation dialog', async () => {
-        // Set currentBallotIndex to 1 so the Remove Ballot button is enabled
-        mockBallotState.currentBallotIndex = 1;
-        mockParams.voteIndex = '2';
+    it('creates a new ballot when clicking next on the last ballot', () => {
         mockBallotState.ballots = [
-            { id: '1', index: 0, vote: [] },
-            { id: '2', index: 1, vote: [] }
+            { id: '1', index: 0, vote: [] }
         ];
+        mockParams.voteIndex = '1';
 
         renderWithRouter(<Votes />);
-        
-        // Find the "Remove Ballot" button in the main view
-        const removeButton = screen.getByRole('button', { name: 'Remove Ballot' });
-        
-        fireEvent.click(removeButton);
+        const nextButton = screen.getByRole('button', { name: /next ballot/i });
+        fireEvent.click(nextButton);
 
-        // We check if removeBallot is called directly when in dialog mode
-        // In the real component, it first sets isDialogOpen to true.
-        // If we can't see the dialog in tests, let's at least verify that the function exists
-        expect(removeButton).toBeInTheDocument();
+        // This is what should happen: it should call nextVote(0)
+        expect(mockBallotState.nextVote).toHaveBeenCalledWith(0);
     });
 
     it('handles pagination', () => {
@@ -164,7 +151,7 @@ describe('Votes', () => {
     });
 
     it('disables next button on last ballot', () => {
-        mockBallotState.currentBallotIndex = 0;
+        mockParams.voteIndex = '1';
         mockBallotState.ballots = [{ id: '1', index: 0, vote: [] }];
 
         renderWithRouter(<Votes />);
@@ -174,7 +161,7 @@ describe('Votes', () => {
     });
 
     it('disables previous button on first ballot', () => {
-        mockBallotState.currentBallotIndex = 0;
+        mockParams.voteIndex = '1';
 
         renderWithRouter(<Votes />);
         const prevButton = screen.getByRole('button', { name: 'previous vote' });

@@ -13,7 +13,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import { Routes, Route, useLocation } from 'react-router-dom';  // <-- new imports
+import { Routes, Route, useLocation } from 'react-router-dom';
 import NavItems from "./NavItems";
 import { Dashboard } from "./pages/Dashboard";
 import { Votes } from "./pages/Votes";

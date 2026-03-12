@@ -12,7 +12,6 @@ describe('useBallotStore', () => {
     it('should initialize with a default ballot', () => {
         const state = useBallotStore.getState();
         expect(state.ballots).toHaveLength(1);
-        expect(state.currentBallotIndex).toBe(0);
         expect(state.ballots[0].index).toBe(0);
     });
 
@@ -51,13 +50,6 @@ describe('useBallotStore', () => {
             useBallotStore.getState().removeBallot(state.ballots[0]);
         });
         expect(useBallotStore.getState().ballots).toHaveLength(1);
-    });
-
-    it('should set vote index', () => {
-        act(() => {
-            useBallotStore.getState().setVoteIndex(5);
-        });
-        expect(useBallotStore.getState().currentBallotIndex).toBe(5);
     });
 
     it('should save a vote (replace existing ballot by index)', () => {
@@ -114,10 +106,9 @@ describe('useBallotStore', () => {
 
     it('should navigate to next vote and create ballot if missing', () => {
         act(() => {
-            useBallotStore.getState().nextVote();
+            useBallotStore.getState().nextVote(0);
         });
         const state = useBallotStore.getState();
-        expect(state.currentBallotIndex).toBe(1);
         expect(state.ballots).toHaveLength(2);
         expect(state.ballots[1].index).toBe(1);
     });
@@ -125,36 +116,10 @@ describe('useBallotStore', () => {
     it('should navigate to next vote and NOT create ballot if already exists', () => {
         act(() => {
             useBallotStore.getState().addBallot(createNewBallot(1));
-            useBallotStore.getState().nextVote();
+            useBallotStore.getState().nextVote(0);
         });
         const state = useBallotStore.getState();
-        expect(state.currentBallotIndex).toBe(1);
         expect(state.ballots).toHaveLength(2);
-    });
-
-    it('should set currentBallotIndex to index-1 if removed ballot is current', () => {
-        act(() => {
-            useBallotStore.getState().addBallot(createNewBallot(1));
-            useBallotStore.getState().setVoteIndex(1);
-        });
-        const ballotToRemove = useBallotStore.getState().ballots[1];
-        act(() => {
-            useBallotStore.getState().removeBallot(ballotToRemove);
-        });
-        expect(useBallotStore.getState().currentBallotIndex).toBe(0);
-    });
-
-    it('should NOT set currentBallotIndex to index-1 if removed ballot is NOT current', () => {
-        act(() => {
-            useBallotStore.getState().addBallot(createNewBallot(1));
-            useBallotStore.getState().addBallot(createNewBallot(2));
-            useBallotStore.getState().setVoteIndex(2);
-        });
-        const ballotToRemove = useBallotStore.getState().ballots[1];
-        act(() => {
-            useBallotStore.getState().removeBallot(ballotToRemove);
-        });
-        expect(useBallotStore.getState().currentBallotIndex).toBe(2);
     });
 
     it('should initialize missing ballot in setBallotVote', () => {
@@ -167,15 +132,6 @@ describe('useBallotStore', () => {
         expect(b5?.vote).toContainEqual({ position: 'pos1', person: 'pers1' });
     });
 
-    it('should navigate to previous vote', () => {
-        act(() => {
-            useBallotStore.getState().nextVote();
-            useBallotStore.getState().previousVote();
-        });
-        const state = useBallotStore.getState();
-        expect(state.currentBallotIndex).toBe(0);
-    });
-
     it('should import ballots', () => {
         const newBallots: Ballot[] = [
             { index: 0, vote: [] },
@@ -186,6 +142,5 @@ describe('useBallotStore', () => {
         });
         const state = useBallotStore.getState();
         expect(state.ballots).toEqual(newBallots);
-        expect(state.currentBallotIndex).toBe(1);
     });
 });
