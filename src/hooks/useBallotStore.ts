@@ -4,13 +4,10 @@ import {persist} from "zustand/middleware";
 
 interface BallotState {
     ballots: Array<Ballot>
-    currentBallotIndex: number
     addBallot: (newBallot: Ballot) => void
     removeBallot: (ballot: Ballot) => void
     removeAllBallots: () => void
-    nextVote: () => void
-    previousVote: () => void
-    setVoteIndex: (index: number) => void
+    nextVote: (currentIndex: number) => void
     saveVote: (ballot: Ballot) => void
     setBallotVote: (index: number, position: PositionKey, person: PersonKey, checked: boolean) => void
     importBallots: (newBallots: Array<Ballot>) => void
@@ -29,8 +26,7 @@ export const useBallotStore = create<BallotState>()(persist(
     (set) => {
         const createDefault = () => {
             return {
-                ballots: [createNewBallot(0)],
-                currentBallotIndex: 0
+                ballots: [createNewBallot(0)]
             }
         }
 
@@ -38,25 +34,20 @@ export const useBallotStore = create<BallotState>()(persist(
             ...createDefault(),
             addBallot: (newBallot) => set((state) => ({ballots: state.ballots.concat([newBallot])})),
             removeBallot: (ballot) => set((state) => {
-                if (state.ballots.length == 1) {
-                    return ({}) // disable removal of the first vote.
+                if (state.ballots.length === 1) {
+                    return state
                 }
-                // remove ballot from array, recalculate indexes, and update currentBallotIndex only if the last ballot was removed.
-                let index = 0;
+                // remove ballot from array, recalculate indexes.
                 return ({
-                    ballots: state.ballots.filter(b => b.index != ballot.index).map(b => {
-                        b.index = index;
-                        index++
-                        return b
-                    }),
-                    currentBallotIndex: Math.max(ballot.index == state.currentBallotIndex ? state.currentBallotIndex - 1 : state.currentBallotIndex, 0)
+                    ballots: state.ballots
+                        .filter(b => b.index !== ballot.index)
+                        .map((b, index) => ({
+                            ...b,
+                            index
+                        }))
                 });
             }),
             removeAllBallots: () => set(() => createDefault()),
-            setVoteIndex: (newBallotIndex) => set(() => {
-                console.log("setVoteIndex", newBallotIndex)
-                return ({currentBallotIndex: newBallotIndex});
-            }),
             saveVote: (ballotToAdd) => set((state) => {
                 return ({ballots: state.ballots.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
             }),
@@ -91,8 +82,8 @@ export const useBallotStore = create<BallotState>()(persist(
                     ballots: updatedBallots
                 });
             }),
-            nextVote: () => set((state) => {
-                const newBallotIndex = state.currentBallotIndex + 1;
+            nextVote: (currentIndex) => set((state) => {
+                const newBallotIndex = currentIndex + 1;
                 let updatedBallots;
                 if (!state.ballots.find(b => b.index == newBallotIndex)) {
                     // create empty ballot if not existing
@@ -101,14 +92,12 @@ export const useBallotStore = create<BallotState>()(persist(
                     updatedBallots = state.ballots
                 }
                 console.log("nextVote", newBallotIndex)
-                return ({currentBallotIndex: newBallotIndex, ballots: updatedBallots});
+                return ({ballots: updatedBallots});
             }),
-            previousVote: () => set((state) => ({currentBallotIndex: Math.max(state.currentBallotIndex - 1, 0)})),
             importBallots: (newBallots: Array<Ballot>) => {
                 console.log("[DEBUG_LOG] Setting ballots:", newBallots);
                 set({
-                    ballots: newBallots,
-                    currentBallotIndex: newBallots.length - 1
+                    ballots: newBallots
                 });
             }
         });

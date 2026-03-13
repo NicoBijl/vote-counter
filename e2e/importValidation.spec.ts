@@ -6,7 +6,7 @@ test.describe('Import Validation', () => {
         await page.goto('http://localhost:5173');
 
         // Go to Settings page where import functionality is located
-        await page.getByRole('button', {name: 'Settings'}).click();
+        await page.getByRole('link', {name: 'Settings'}).click();
 
         // Wait for Settings page to load properly
         await expect(page.getByRole('heading', {name: 'settings', exact: false})).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('Import Validation', () => {
         await votesFileInput.setInputFiles('e2e/files/vote-counter-ballots-2025-10-17T13_26_03.095Z.json');
 
         // Navigate to Results page to verify imported data
-        await page.getByRole('button', {name: 'Results'}).click();
+        await page.getByRole('link', {name: 'Results'}).click();
 
         // Verify that the imported vote data is displayed in Results page
         await expect(page.getByText('Person 01')).toBeVisible();
@@ -36,7 +36,7 @@ test.describe('Import Validation', () => {
         await expect(page.getByText('Electoral Divisor').first()).toBeVisible();
 
         // Navigate to Positions page to verify imported positions
-        await page.getByRole('button', {name: 'Positions'}).click();
+        await page.getByRole('link', {name: 'Positions'}).click();
 
         // Verify that the expected positions from our test file are displayed
         await expect(page.getByText('Scriba').first()).toBeVisible();

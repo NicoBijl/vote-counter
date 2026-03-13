@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom';
 import { jest, beforeEach } from '@jest/globals';
+import { TextEncoder, TextDecoder } from 'util';
+
+global.TextEncoder = TextEncoder;
+// @ts-expect-error - TextDecoder is not exactly the same but sufficient for tests
+global.TextDecoder = TextDecoder;
 
 // Make TypeScript aware of jest-dom matchers
 declare global {

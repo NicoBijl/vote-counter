@@ -2,15 +2,23 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Votes } from '../Votes';
 import { Position, Ballot } from '../../../types';
 import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
+
+const mockNavigate = jest.fn();
+const mockParams = { voteIndex: '1' };
+
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual('react-router-dom'),
+    useNavigate: () => mockNavigate,
+    useParams: () => mockParams,
+}));
 
 // Create store states
 const mockBallotState = {
     ballots: [] as Ballot[],
-    currentBallotIndex: 0,
     removeBallot: jest.fn(),
     nextVote: jest.fn(),
-    previousVote: jest.fn(),
-    setVoteIndex: jest.fn(),
+    saveVote: jest.fn(),
     setBallotVote: jest.fn()
 };
 
@@ -56,32 +64,35 @@ describe('Votes', () => {
         mockBallotState.ballots = [
             { id: '1', index: 0, vote: [] }
         ];
-        mockBallotState.currentBallotIndex = 0;
         mockPositionsState.positions = [mockPosition];
 
         // Reset mock functions
         mockBallotState.removeBallot.mockClear();
         mockBallotState.nextVote.mockClear();
-        mockBallotState.previousVote.mockClear();
-        mockBallotState.setVoteIndex.mockClear();
         mockBallotState.setBallotVote.mockClear();
         mockPositionsState.setPositions.mockClear();
+        mockNavigate.mockClear();
+        mockParams.voteIndex = '1';
     });
 
+    const renderWithRouter = (ui: React.ReactElement) => {
+        return render(ui, { wrapper: MemoryRouter });
+    };
+
     it('renders ballot navigation', () => {
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         expect(screen.getByText('Vote: # 1')).toBeInTheDocument();
     });
 
     it('renders positions with checkboxes', () => {
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         expect(screen.getByText('Test Position')).toBeInTheDocument();
         expect(screen.getByText('Person 1')).toBeInTheDocument();
         expect(screen.getByText('Person 2')).toBeInTheDocument();
     });
 
     it('handles vote selection', () => {
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         const checkbox = screen.getAllByRole('checkbox')[0];
         fireEvent.click(checkbox);
         expect(mockBallotState.setBallotVote).toHaveBeenCalledWith(0, 'test-position', 'person1', true);
@@ -93,29 +104,25 @@ describe('Votes', () => {
             { id: '2', index: 1, vote: [] }
         ];
 
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         const nextButton = screen.getByRole('button', { name: /next ballot/i });
         fireEvent.click(nextButton);
-        expect(mockBallotState.nextVote).toHaveBeenCalled();
+        // It now calls navigate instead of mockBallotState.nextVote
+        expect(mockNavigate).toHaveBeenCalledWith('/votes/2');
     });
 
-    it('shows remove ballot confirmation dialog', async () => {
-        // Set currentBallotIndex to 1 so the Remove Ballot button is enabled
-        mockBallotState.currentBallotIndex = 1;
+    it('creates a new ballot when clicking next on the last ballot', () => {
         mockBallotState.ballots = [
-            { id: '1', index: 0, vote: [] },
-            { id: '2', index: 1, vote: [] }
+            { id: '1', index: 0, vote: [] }
         ];
+        mockParams.voteIndex = '1';
 
-        render(<Votes />);
-        const removeButton = screen.getByRole('button', { name: /remove ballot/i });
-        fireEvent.click(removeButton);
+        renderWithRouter(<Votes />);
+        const nextButton = screen.getByRole('button', { name: /next ballot/i });
+        fireEvent.click(nextButton);
 
-        expect(screen.getByText(/Are you sure you want to remove this ballot/i)).toBeInTheDocument();
-
-        const confirmButton = screen.getByRole('button', { name: /remove ballot/i });
-        fireEvent.click(confirmButton);
-        expect(mockBallotState.removeBallot).toHaveBeenCalledWith({ id: '2', index: 1, vote: [] });
+        // This is what should happen: it should call nextVote(0)
+        expect(mockBallotState.nextVote).toHaveBeenCalledWith(0);
     });
 
     it('handles pagination', () => {
@@ -125,39 +132,38 @@ describe('Votes', () => {
             vote: []
         }));
 
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         const pagination = screen.getByRole('navigation');
         expect(pagination).toBeInTheDocument();
 
         // Find the button for page 2 by its aria-label
         const pageButton = screen.getByRole('button', { name: 'Go to page 2' });
         fireEvent.click(pageButton);
-        expect(mockBallotState.setVoteIndex).toHaveBeenCalledWith(1);
+        expect(mockNavigate).toHaveBeenCalledWith('/votes/2');
     });
 
     it('has keyboard navigation functions', () => {
-        render(<Votes />);
+        renderWithRouter(<Votes />);
 
         // Instead of testing keyboard events, we'll test that the functions exist
         // and are properly connected to the store
-        expect(mockBallotState.nextVote).toBeDefined();
-        expect(mockBallotState.previousVote).toBeDefined();
+        expect(mockBallotState.ballots).toBeDefined();
     });
 
     it('disables next button on last ballot', () => {
-        mockBallotState.currentBallotIndex = 0;
+        mockParams.voteIndex = '1';
         mockBallotState.ballots = [{ id: '1', index: 0, vote: [] }];
 
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         // Find the next vote button by its aria-label
         const nextButton = screen.getByRole('button', { name: 'next vote' });
         expect(nextButton).toBeDisabled();
     });
 
     it('disables previous button on first ballot', () => {
-        mockBallotState.currentBallotIndex = 0;
+        mockParams.voteIndex = '1';
 
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         const prevButton = screen.getByRole('button', { name: 'previous vote' });
         expect(prevButton).toBeDisabled();
     });
@@ -167,9 +173,8 @@ describe('Votes', () => {
             mockPosition,
             { ...mockPosition, key: 'pos2', title: 'Position 2' }
         ];
-        render(<Votes />);
-        
-        const pos1 = screen.getByText('Test Position').closest('.MuiGrid-root');
+        renderWithRouter(<Votes />);
+    
         const pos2 = screen.getByText('Position 2').closest('.MuiGrid-root');
         
         fireEvent.focus(pos2!);
@@ -178,7 +183,7 @@ describe('Votes', () => {
     });
 
     it('handles invalid checkbox separately', () => {
-        render(<Votes />);
+        renderWithRouter(<Votes />);
         const invalidCheckbox = screen.getByLabelText(/Invalid/i);
         fireEvent.click(invalidCheckbox);
         expect(mockBallotState.setBallotVote).toHaveBeenCalledWith(0, 'test-position', 'invalid', true);

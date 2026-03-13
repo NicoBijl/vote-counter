@@ -4,7 +4,7 @@ test.describe('Votes Page', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the votes page by clicking the nav item
     await page.goto('http://localhost:5173');
-    await page.getByRole('button', { name: 'Votes' }).click();
+    await page.getByRole('link', { name: 'Votes' }).click();
   });
 
   test('should display the votes page with correct title', async ({ page }) => {
