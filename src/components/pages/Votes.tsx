@@ -172,6 +172,7 @@ export function Votes() {
 
     useEffect(() => {
         console.log("currentBallotIndex updated")
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFocusPosition(positions[0]);
         setIsDialogOpen(false);
     }, [currentBallotIndex, positions]);

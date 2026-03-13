@@ -61,6 +61,7 @@ export function SyncIndicator({ showDetails = false }: SyncIndicatorProps) {
             }, 5000);
             return () => clearTimeout(timer);
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDebouncedStatus(syncStatus);
         }
     }, [syncStatus]);

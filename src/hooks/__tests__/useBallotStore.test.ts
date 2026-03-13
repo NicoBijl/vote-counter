@@ -1,4 +1,5 @@
 import { useBallotStore, createNewBallot } from '../useBallotStore';
+import { Ballot } from '../../types';
 import { act } from '@testing-library/react';
 
 describe('useBallotStore', () => {
@@ -60,7 +61,7 @@ describe('useBallotStore', () => {
     });
 
     it('should save a vote (replace existing ballot by index)', () => {
-        const updatedBallot = { index: 0, vote: [{ position: 'pos1', person: 'pers1' }] } as any;
+        const updatedBallot: Ballot = { index: 0, vote: [{ position: 'pos1', person: 'pers1' }] };
         act(() => {
             useBallotStore.getState().saveVote(updatedBallot);
         });
@@ -173,10 +174,10 @@ describe('useBallotStore', () => {
     });
 
     it('should import ballots', () => {
-        const newBallots = [
+        const newBallots: Ballot[] = [
             { index: 0, vote: [] },
             { index: 1, vote: [{ position: 'p', person: 'v' }] }
-        ] as any;
+        ];
         act(() => {
             useBallotStore.getState().importBallots(newBallots);
         });

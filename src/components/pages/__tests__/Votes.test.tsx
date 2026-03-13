@@ -169,7 +169,6 @@ describe('Votes', () => {
         ];
         render(<Votes />);
         
-        const pos1 = screen.getByText('Test Position').closest('.MuiGrid-root');
         const pos2 = screen.getByText('Position 2').closest('.MuiGrid-root');
         
         fireEvent.focus(pos2!);

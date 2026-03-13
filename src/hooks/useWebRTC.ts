@@ -3,11 +3,12 @@ import Peer, { DataConnection } from 'peerjs';
 import { useCollaborationStore } from './useCollaborationStore';
 import { useBallotStore } from './useBallotStore';
 import { computeBallotHash } from '../utils/syncUtils';
+import { Ballot } from '../types';
 
 export type MessageType = 
     | { type: 'HASH_CHECK'; hash: string }
     | { type: 'REQUEST_DELTAS' }
-    | { type: 'DELTAS'; ballots: any[] };
+    | { type: 'DELTAS'; ballots: Ballot[] };
 
 export function useWebRTC() {
     const { 
@@ -32,7 +33,7 @@ export function useWebRTC() {
         }
     }, []);
 
-    const handleMessage = useCallback((data: any) => {
+    const handleMessage = useCallback((data: MessageType) => {
         const msg = data as MessageType;
         
         switch (msg.type) {
@@ -69,7 +70,7 @@ export function useWebRTC() {
         });
 
         conn.on('data', (data) => {
-            handleMessage(data);
+            handleMessage(data as MessageType);
         });
 
         conn.on('close', () => {
