@@ -48,7 +48,7 @@ jobs:
 
       - name: Cache coverage baseline for PRs
         if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: coverage/coverage-summary.json
           key: coverage-baseline-main-${{ github.sha }}
