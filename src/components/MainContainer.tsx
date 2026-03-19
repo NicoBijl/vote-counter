@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useState } from 'react';                 
 import { styled } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import MuiDrawer from '@mui/material/Drawer';
@@ -13,6 +14,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import Button from '@mui/material/Button';      
 import { Routes, Route, useLocation } from 'react-router-dom';
 import NavItems from "./NavItems";
 import { Dashboard } from "./pages/Dashboard";
@@ -20,6 +22,7 @@ import { Votes } from "./pages/Votes";
 import { Positions } from "./pages/Positions";
 import { Results } from "./pages/Results";
 import { Settings } from "./pages/Settings";
+import CollaborationModal from './CollaborationModal'; 
 
 const drawerWidth: number = 240;
 
@@ -73,17 +76,17 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 export default function MainContainer() {
     const [open, setOpen] = React.useState(true);
-    const location = useLocation();  // <-- get current location for title
+    const [isPairingModalOpen, setIsPairingModalOpen] = useState(false);  // <-- ADDED
+    const location = useLocation();
     const toggleDrawer = () => {
         setOpen(!open);
     };
 
-    // Derive page title from the current path
     const getPageTitle = () => {
         const path = location.pathname;
         if (path === '/') return 'dashboard';
-        const segment = path.substring(1); // remove leading '/'
-        if (segment.startsWith('votes/')) return 'votes'; // handle /votes/3
+        const segment = path.substring(1);
+        if (segment.startsWith('votes/')) return 'votes';
         return segment || 'dashboard';
     };
 
@@ -117,6 +120,14 @@ export default function MainContainer() {
                     >
                         Vote Counter App
                     </Typography>
+                    {/* Start Collaboration Button – visible on all pages */}
+                    <Button
+                        color="inherit"
+                        onClick={() => setIsPairingModalOpen(true)}
+                        sx={{ ml: 2 }}  // small left margin to separate from title
+                    >
+                        Start Collaboration
+                    </Button>
                 </Toolbar>
             </AppBar>
             <Drawer variant="permanent" open={open}>
@@ -134,7 +145,6 @@ export default function MainContainer() {
                 </Toolbar>
                 <Divider/>
                 <List component="nav">
-                    {/* NavItems no longer needs an onClick prop */}
                     <NavItems />
                 </List>
             </Drawer>
@@ -158,7 +168,6 @@ export default function MainContainer() {
                                         sx={{textTransform: "capitalize"}}>
                                 {getPageTitle()}
                             </Typography>
-                            {/* Define routes */}
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/settings" element={<Settings />} />
@@ -171,6 +180,12 @@ export default function MainContainer() {
                     </Grid>
                 </Container>
             </Box>
+
+            {/* Collaboration Modal */}
+            <CollaborationModal
+                open={isPairingModalOpen}
+                onClose={() => setIsPairingModalOpen(false)}
+            />
         </Box>
     );
 }
