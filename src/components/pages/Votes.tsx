@@ -1,4 +1,5 @@
 import {
+    Box,
     Button,
     Checkbox,
     Chip,
@@ -427,10 +428,12 @@ export function Votes() {
                 <Grid size="grow">
                     <Grid container>
                         <Grid size={12}>
-                            <Typography variant="h2" sx={{ textAlign: "center", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                                Vote: # {currentBallotIndex + 1}
-                                {isPending && <CircularProgress size={24} />}
-                            </Typography>
+                            <Box sx={{ textAlign: "center", position: 'relative', display: 'inline-block', width: '100%' }}>
+                                <Typography variant="h2" component="span">
+                                    Vote: # {currentBallotIndex + 1}
+                                </Typography>
+                                {isPending && <CircularProgress size={24} sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(calc(100% + 8px), -50%)' }} />}
+                            </Box>
                         </Grid>
 
                         {positions.map((position, index) =>
