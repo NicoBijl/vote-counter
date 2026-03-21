@@ -32,7 +32,6 @@ export interface Vote {
 }
 
 export interface Ballot {
-    id: string;
     index: number;
     vote: Vote[];
 }

@@ -1,5 +1,5 @@
 import { useBallotStore, createNewBallot, Ballot } from '../useBallotStore';
-import { PositionKey, PersonKey } from '../types';
+import { PositionKey, PersonKey } from '../../types';
 import { act } from '@testing-library/react';
 
 describe('useBallotStore', () => {

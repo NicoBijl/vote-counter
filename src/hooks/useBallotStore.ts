@@ -1,4 +1,4 @@
-import {PersonKey, PositionKey} from "../types.ts";
+import {PersonKey, PositionKey, Ballot, Vote} from "../types.ts";
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
 
@@ -107,12 +107,3 @@ export const useBallotStore = create<BallotState>()(persist(
     }
 ))
 
-export interface Ballot {
-    index: number
-    vote: Array<Vote>
-}
-
-export interface Vote {
-    position: PositionKey
-    person: PersonKey
-}
