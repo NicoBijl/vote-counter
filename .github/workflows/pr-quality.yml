@@ -35,7 +35,7 @@ jobs:
         run: npm ci
       - name: Restore baseline coverage from main
         id: baseline_cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: coverage/coverage-summary.json
           key: coverage-baseline-main-
