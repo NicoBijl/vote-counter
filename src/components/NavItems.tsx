@@ -6,40 +6,37 @@ import PeopleIcon from '@mui/icons-material/People';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { NavLink } from 'react-router-dom';
 
-interface NavItemsProps {
-    onClick: (nextPage: string) => void
-}
-
-export default function NavItems({onClick}: NavItemsProps) {
+// The onClick prop is no longer needed – remove the interface entirely
+export default function NavItems() {
     return (
-
         <>
-            <ListItemButton onClick={() => onClick('dashboard')}>
+            <ListItemButton component={NavLink} to="/">
                 <ListItemIcon>
                     <HouseIcon/>
                 </ListItemIcon>
                 <ListItemText primary="Dashboard"/>
             </ListItemButton>
-            <ListItemButton onClick={() => onClick('results')}>
+            <ListItemButton component={NavLink} to="/results">
                 <ListItemIcon>
                     <AssignmentIcon/>
                 </ListItemIcon>
                 <ListItemText primary="Results"/>
             </ListItemButton>
-            <ListItemButton onClick={() => onClick('positions')}>
+            <ListItemButton component={NavLink} to="/positions">
                 <ListItemIcon>
                     <PeopleIcon/>
                 </ListItemIcon>
                 <ListItemText primary="Positions"/>
             </ListItemButton>
-            <ListItemButton onClick={() => onClick('votes')}>
+            <ListItemButton component={NavLink} to="/votes">
                 <ListItemIcon>
                     <BallotIcon/>
                 </ListItemIcon>
                 <ListItemText primary="Votes"/>
             </ListItemButton>
-            <ListItemButton onClick={() => onClick('settings')}>
+            <ListItemButton component={NavLink} to="/settings">
                 <ListItemIcon>
                     <SettingsIcon/>
                 </ListItemIcon>

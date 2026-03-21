@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   security-events: write
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
@@ -27,9 +27,31 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
-        run: npm run test
+      - name: Run tests with coverage
+        run: npm run test:coverage
         continue-on-error: true
+
+      - name: Generate coverage badge
+        run: npx coverage-badges-cli --source coverage/coverage-summary.json --output coverage.svg
+        continue-on-error: true
+
+      - name: Commit badge to repository
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Action
+          author_email: action@github.com
+          message: 'chore: update coverage badge'
+          add: 'coverage.svg'
+          new_branch: badges
+          push: true
+        continue-on-error: true
+
+      - name: Cache coverage baseline for PRs
+        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
+        uses: actions/cache/save@v5
+        with:
+          path: coverage/coverage-summary.json
+          key: coverage-baseline-main-${{ github.sha }}
 
   security:
     runs-on: ubuntu-latest
@@ -47,7 +69,7 @@ jobs:
           extra_args: --only-verified
 
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -57,7 +79,7 @@ jobs:
           exit-code: 0
 
       - name: Run Trivy vulnerability scanner in repo mode, output sarif
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'fs'
           ignore-unfixed: true
@@ -80,7 +102,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'

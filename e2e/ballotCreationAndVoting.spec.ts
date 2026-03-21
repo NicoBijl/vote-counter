@@ -6,13 +6,13 @@ test.describe('Ballot Creation and Voting - End-to-End Tests', () => {
   test('should navigate between pages without "multiple elements" errors', async ({ page }) => {
     // Navigate to Votes page using specific role selector (this was the fix)
     await page.goto('http://localhost:5173');
-    await page.getByRole('button', { name: 'Votes' }).click();
+    await page.getByRole('link', { name: 'Votes' }).click();
     
     // Verify page title
     await expect(page).toHaveTitle('Vote Counter');
     
     // Navigate to Results page  
-    await page.getByRole('button', { name: 'Results' }).click();
+    await page.getByRole('link', { name: 'Results' }).click();
     
     // Verify Results page content with specific selector (this was the fix)
     await expect(page.locator('h1:has-text("results")')).toBeVisible();
@@ -26,13 +26,13 @@ test.describe('Ballot Creation and Voting - End-to-End Tests', () => {
     await page.goto('http://localhost:5173');
     
     // Use role-based selectors that are more stable than text matching
-    await page.getByRole('button', { name: 'Votes' }).click();
+    await page.getByRole('link', { name: 'Votes' }).click();
     
     // Verify that we can access the voting interface
     await expect(page).toHaveTitle('Vote Counter');
     
     // Navigation test - ensure page transitions work
-    await page.getByRole('button', { name: 'Results' }).click();
+    await page.getByRole('link', { name: 'Results' }).click();
     
     // Use the fix - specific selectors that avoid ambiguity
     await expect(page.locator('h1:has-text("results")')).toBeVisible();
