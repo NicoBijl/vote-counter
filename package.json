@@ -14,11 +14,13 @@
     "test:e2e": "playwright test",
     "test:e2e:cli": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test",
     "test:e2e:chrome": "playwright test --project=chromium",
-    "test:e2e:cli:chrome": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test --project=chromium"
+    "test:e2e:cli:chrome": "cross-env PW_TEST_HTML_REPORT_OPEN=never playwright test --project=chromium",
+    "all": "npm run lint && npm run build:check && npm run test && npm run test:e2e:cli:chrome"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@hello-pangea/dnd": "^18.0.1",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "react": "^19.0.0",
