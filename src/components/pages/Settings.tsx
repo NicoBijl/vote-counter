@@ -1,11 +1,11 @@
 import Typography from "@mui/material/Typography";
-import {Alert, Button, Card, FormControlLabel, Snackbar, Stack, Switch, TextField} from "@mui/material";
+import {Alert, Button, Card, CircularProgress, FormControlLabel, Snackbar, Stack, Switch, TextField} from "@mui/material";
 import {usePositionsStore} from "../../hooks/usePositionsStore.ts";
 import {useBallotStore} from "../../hooks/useBallotStore.ts";
 import DownloadIcon from '@mui/icons-material/Download';
 import DangerousIcon from '@mui/icons-material/Dangerous';
 import UploadIcon from '@mui/icons-material/Upload';
-import {useRef, useState} from "react";
+import {useCallback, useRef, useState, useTransition, useActionState} from "react";
 import {Ballot, isBallot, isPosition, Position} from "../../types.ts";
 import {convertLegacyPositions, LegacyPosition} from "../../utils/positionUtils";
 import {useSettingsStore} from "../../hooks/useSettingsStore.ts";
@@ -28,10 +28,12 @@ export function Settings() {
     const [importVotesConfirmDialogOpen, setVotesDialogOpen] = useState(false)
     const [positionUploadTime, setPositionsUploadTime] = useState<Date | null>(null)
     const [votesUploadTime, setVotesUploadTime] = useState<Date | null>(null)
-    const [uploadError, setUploadError] = useState<string | null>(null)
+    const [, setUploadError] = useState<string | null>(null)
+    const [isPending, startTransition] = useTransition()
+    const [debouncedElectoralDivisor, setDebouncedElectoralDivisor] = useState(electoralDivisorVariable)
+    const [debouncedTotalVoters, setDebouncedTotalVoters] = useState(totalAllowedVoters)
 
-
-    function downloadFile(value: object, fileName: string) {
+    const downloadFile = useCallback((value: object, fileName: string) => {
         const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
             JSON.stringify(value)
         )}`;
@@ -40,137 +42,174 @@ export function Settings() {
         const d = new Date()
         link.download = `vote-counter-${fileName}-${d.toISOString()}.json`;
         link.click();
-    }
+    }, []);
 
-    const exportVotes = () => {
+    const exportVotes = useCallback(() => {
         downloadFile(ballots, 'ballots');
-    };
-    const removeAllVotes = () => {
-        removeAllBallots();
-    }
-    const exportPositions = () => {
+    }, [ballots, downloadFile]);
+
+    const removeAllVotes = useCallback(() => {
+        startTransition(() => {
+            removeAllBallots();
+        });
+    }, [removeAllBallots]);
+
+    const exportPositions = useCallback(() => {
         downloadFile(positions, 'positions');
-    };
+    }, [positions, downloadFile]);
 
     const openFileChooserPositions = () => {
-        console.log("file ", importPositionsFile?.current)
         importPositionsFile.current?.click()
     }
 
     const openFileChooserVotes = () => {
-        console.log("file ", importVotesFile?.current)
         importVotesFile.current?.click()
     }
-    const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
 
-        const fileReader = new FileReader()
-        fileReader.readAsText(e.target.files[0], "UTF-8")
-        fileReader.onload = e => {
-            console.log('e.target.result', e?.target?.result)
-            const fileContent = e?.target?.result
-            if (typeof fileContent === "string") {
-                const jsonObjects = JSON.parse(fileContent) as object[]
-                if (!Array.isArray(jsonObjects)) {
-                    console.log("File content is not an array!")
-                    setUploadError("Uploaded file must contain an array of positions")
-                    return;
-                }
+    const handleElectoralDivisorChange = (value: number) => {
+        setDebouncedElectoralDivisor(value);
+        startTransition(() => {
+            setElectoralDivisorVariable(value);
+        });
+    };
 
-                try {
-                    // Try parsing as new format first
-                    if (jsonObjects.every(v => isPosition(v))) {
-                        const positionsInput = jsonObjects as Position[]
-                        console.log("Uploaded positions in new format", positionsInput)
-                        setPositions(positionsInput)
-                    } else {
-                        // Try converting from legacy format
-                        const convertedPositions = convertLegacyPositions(jsonObjects as LegacyPosition[]);
-                        console.log("Converted positions from legacy format", convertedPositions)
-                        setPositions(convertedPositions)
-                    }
+    const handleTotalVotersChange = (value: number) => {
+        setDebouncedTotalVoters(value);
+        startTransition(() => {
+            setTotalAllowedVoters(value);
+        });
+    };
 
-                    importPositionsFile.current!.value = ""
-                    setDialogOpen(true)
-                    setPositionsUploadTime(new Date())
-                    setUploadError(null)
-                } catch (error) {
-                    console.log("Failed to parse positions in any format!", error)
-                    setUploadError("Failed to parse positions. Please check the file format.")
-                }
+    const handleSortToggle = (checked: boolean) => {
+        startTransition(() => {
+            setSortResultsByVoteCount(checked);
+        });
+    };
 
+    type FileImportState = {
+        success: boolean;
+        error: string | null;
+        fileType: 'positions' | 'votes' | null;
+    };
 
-            } else {
-                console.log("other file content", typeof fileContent)
+    const [positionsImportState, importPositionsAction, isPositionsImporting] = useActionState<
+        FileImportState,
+        { fileContent: string; fileName: string }
+    >(async (_prevState, formData) => {
+        const fileContent = formData.fileContent;
+        
+        try {
+            const jsonObjects = JSON.parse(fileContent) as object[];
+            if (!Array.isArray(jsonObjects)) {
+                return { success: false, error: "File content is not an array", fileType: 'positions' };
             }
-        }
-    }
 
+            if (jsonObjects.every(v => isPosition(v))) {
+                const positionsInput = jsonObjects as Position[];
+                setPositions(positionsInput);
+            } else {
+                const convertedPositions = convertLegacyPositions(jsonObjects as LegacyPosition[]);
+                setPositions(convertedPositions);
+            }
+
+            importPositionsFile.current!.value = "";
+            return { success: true, error: null, fileType: 'positions' };
+        } catch (error) {
+            return { 
+                success: false, 
+                error: `Failed to parse positions: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+                fileType: 'positions' 
+            };
+        }
+    }, { success: false, error: null, fileType: null });
+
+    const [votesImportState, importVotesAction, isVotesImporting] = useActionState<
+        FileImportState,
+        { fileContent: string }
+    >(async (_prevState, formData) => {
+        try {
+            const jsonObjects = JSON.parse(formData.fileContent) as object[];
+            if (!Array.isArray(jsonObjects)) {
+                return { success: false, error: "File content is not an array", fileType: 'votes' };
+            }
+
+            if (jsonObjects.every(v => isBallot(v))) {
+                const ballotsInput = jsonObjects as Ballot[];
+                importBallots(ballotsInput);
+                importVotesFile.current!.value = "";
+                return { success: true, error: null, fileType: 'votes' };
+            } else {
+                return { success: false, error: "Invalid ballot format", fileType: 'votes' };
+            }
+        } catch (error) {
+            return { 
+                success: false, 
+                error: `Failed to parse ballots: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+                fileType: 'votes' 
+            };
+        }
+    }, { success: false, error: null, fileType: null });
+
+    const onPositionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const fileName = files[0].name;
+        const fileReader = new FileReader();
+        fileReader.onload = (event) => {
+            const fileContent = event.target?.result;
+            if (typeof fileContent === "string") {
+                startTransition(() => {
+                    importPositionsAction({ fileContent, fileName });
+                });
+                setDialogOpen(true);
+                setPositionsUploadTime(new Date());
+            }
+        };
+        fileReader.readAsText(files[0], "UTF-8");
+    };
 
     const onVotesFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        const fileReader = new FileReader()
-        fileReader.readAsText(e.target.files[0], "UTF-8")
-        fileReader.onload = e => {
-            console.log('e.target.result', e?.target?.result)
-            const fileContent = e?.target?.result
+        const fileReader = new FileReader();
+        fileReader.onload = (event) => {
+            const fileContent = event.target?.result;
             if (typeof fileContent === "string") {
-                try {
-                    const jsonObjects = JSON.parse(fileContent) as object[]
-                    if (!Array.isArray(jsonObjects)) {
-                        console.log("File content is not an array!")
-                        setUploadError("Uploaded file must contain an array of ballots")
-                        return;
-                    }
-
-                    // Validate ballots
-                    if (jsonObjects.every(v => isBallot(v))) {
-                        const ballotsInput = jsonObjects as Ballot[]
-                        console.log("Uploaded ballots", ballotsInput)
-
-                        // Set the imported ballots in the store
-                        importBallots(ballotsInput);
-
-                        importVotesFile.current!.value = ""
-                        setVotesDialogOpen(true)
-                        setVotesUploadTime(new Date())
-                        setUploadError(null)
-                    } else {
-                        console.log("Invalid ballot format")
-                        setUploadError("Invalid ballot format. Please check the file structure.")
-                    }
-                } catch (error) {
-                    console.log("Failed to parse ballots!", error)
-                    setUploadError("Failed to parse ballots. Please check the file format.")
-                }
-            } else {
-                console.log("other file content", typeof fileContent)
+                startTransition(() => {
+                    importVotesAction({ fileContent });
+                });
+                setVotesDialogOpen(true);
+                setVotesUploadTime(new Date());
             }
-        }
-    }
+        };
+        fileReader.readAsText(files[0], "UTF-8");
+    };
+
+
 
     return (
         <>
             <Snackbar
-                open={importPositionsConfirmDialogOpen && !uploadError}
+                open={importPositionsConfirmDialogOpen && !positionsImportState.error}
                 autoHideDuration={6000}
                 onClose={() => setDialogOpen(false)}
                 message={"Positions successfully imported at " + positionUploadTime?.toLocaleTimeString()}
             />
             <Snackbar
-                open={importVotesConfirmDialogOpen && !uploadError}
+                open={importVotesConfirmDialogOpen && !votesImportState.error}
                 autoHideDuration={6000}
                 onClose={() => setVotesDialogOpen(false)}
                 message={"Votes successfully imported at " + votesUploadTime?.toLocaleTimeString()}
             />
             <Snackbar
-                open={!!uploadError}
+                open={!!positionsImportState.error || !!votesImportState.error}
                 autoHideDuration={6000}
                 onClose={() => setUploadError(null)}
             >
-                <Alert onClose={() => setUploadError(null)} severity="error">
-                    {uploadError}
+                <Alert severity="error">
+                    {positionsImportState.error || votesImportState.error}
                 </Alert>
             </Snackbar>
             <Stack spacing={2}>
@@ -183,8 +222,13 @@ export function Settings() {
                             lead to malfunctions.
                         </Alert>
                         <Button startIcon={<DownloadIcon/>} onClick={exportPositions}>Export Positions</Button>
-                        <Button startIcon={<UploadIcon/>} onClick={openFileChooserPositions}>Import
-                            Positions</Button>
+                        <Button 
+                            startIcon={isPositionsImporting ? <CircularProgress size={20} color="inherit" /> : <UploadIcon/>} 
+                            onClick={openFileChooserPositions}
+                            disabled={isPositionsImporting}
+                        >
+                            {isPositionsImporting ? 'Importing...' : 'Import Positions'}
+                        </Button>
                         <input type='file' id='importPositions' ref={importPositionsFile}
                                style={{display: 'none'}}
                                onChange={onPositionsFileChange}
@@ -195,9 +239,21 @@ export function Settings() {
                     <Stack spacing={2}>
                         <Typography variant={"h4"}>Votes</Typography>
                         <Button startIcon={<DownloadIcon/>} onClick={exportVotes}>Export Votes</Button>
-                        <Button startIcon={<UploadIcon/>} onClick={openFileChooserVotes}>Import Votes</Button>
-                        <Button color={"error"} startIcon={<DangerousIcon/>} onClick={removeAllVotes}>Remove all
-                            votes</Button>
+                        <Button 
+                            startIcon={isVotesImporting ? <CircularProgress size={20} color="inherit" /> : <UploadIcon/>} 
+                            onClick={openFileChooserVotes}
+                            disabled={isVotesImporting}
+                        >
+                            {isVotesImporting ? 'Importing...' : 'Import Votes'}
+                        </Button>
+                        <Button 
+                            color={"error"} 
+                            startIcon={<DangerousIcon/>} 
+                            onClick={removeAllVotes}
+                            disabled={isPending}
+                        >
+                            Remove all votes
+                        </Button>
                         <input type='file' id='importVotes' ref={importVotesFile} 
                                style={{display: 'none'}}
                                onChange={onVotesFileChange}/>
@@ -208,39 +264,39 @@ export function Settings() {
                         <Typography variant={"h4"}>Results</Typography>
 
                         <FormControlLabel control={
-                            <Switch defaultChecked={sortResultsByVoteCount}
-                                    onChange={
-                                        (_, checked) => {
-                                            setSortResultsByVoteCount(checked)
-                                        }
-                                    }/>
+                            <Switch 
+                                defaultChecked={sortResultsByVoteCount}
+                                onChange={(_, checked) => handleSortToggle(checked)}
+                                disabled={isPending}
+                            />
                         } label="Sort results by vote count"/>
 
 
-                        <TextField inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
-                                   label="Electoral Divisor"
-                                   defaultValue={electoralDivisorVariable}
-                                   onChange={(e) => {
-                                       const value = Number(e.target.value) || 0
-                                       if (value != 0) {
-                                           console.log('updating electoralDivisorVariable to ', value)
-                                           setElectoralDivisorVariable(value);
-                                       }
-                                   }
-                                   }/>
+                        <TextField 
+                            inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
+                            label="Electoral Divisor"
+                            value={debouncedElectoralDivisor}
+                            onChange={(e) => {
+                                const value = Number(e.target.value) || 0;
+                                if (value != 0) {
+                                    handleElectoralDivisorChange(value);
+                                }
+                            }}
+                            disabled={isPending}
+                            helperText={isPending ? "Updating..." : ""}
+                        />
 
                         <TextField
                             inputProps={{inputMode: 'numeric', pattern: '[0-9]*'}}
                             label="Total Allowed Voters"
-                            defaultValue={totalAllowedVoters}
+                            value={debouncedTotalVoters}
                             onChange={(e) => {
                                 const value = Number(e.target.value) || 0;
-                                setTotalAllowedVoters(value);
+                                handleTotalVotersChange(value);
                             }}
-                            helperText="Set this to calculate attendance ratio"
+                            disabled={isPending}
+                            helperText={isPending ? "Updating..." : "Set this to calculate attendance ratio"}
                         />
-
-                        {/*    Add sort by vote count toggle */}
                     </Stack>
                 </Card>
 

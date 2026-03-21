@@ -2,6 +2,7 @@ import {
     Button,
     Checkbox,
     Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -9,10 +10,12 @@ import {
     DialogTitle,
     FormControlLabel,
     Pagination,
+    Snackbar,
     Tooltip
 } from "@mui/material";
+import { Alert } from "@mui/material";
 import { PersonKey, Position, PositionKey } from "../../types.ts";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useOptimistic, useTransition } from "react";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -153,13 +156,20 @@ export function Votes() {
         setBallotVote
     } = useBallotStore()
     
-    // Derive currentBallotIndex from URL
     const currentBallotIndex = voteIndex ? Math.max(0, parseInt(voteIndex, 10) - 1) : 0;
     
-    const currentVote = useBallotStore(state => state.ballots.find(b => b.index == currentBallotIndex))
+    const storeBallots = useBallotStore(state => state.ballots)
     const { positions } = usePositionsStore()
     const [focusPosition, setFocusPosition] = useState<Position | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [isPending, startTransition] = useTransition()
+
+    const [optimisticBallots, setOptimisticBallots] = useOptimistic(
+        storeBallots
+    );
+
+    const currentVote = optimisticBallots.find(b => b.index == currentBallotIndex)
 
     // Sync URL param: handle missing or invalid voteIndex
     useEffect(() => {
@@ -215,15 +225,65 @@ export function Votes() {
     }
 
     function toggleChecked(position: Position, personKey: PersonKey) {
-        console.log("Toggle", position, personKey, currentVote)
         if (personKey == "invalid" || isChecked(position.key, personKey) || !maxReached(position.key)) {
-            setBallotVote(currentBallotIndex, position.key, personKey, !isChecked(position.key, personKey))
+            const newChecked = !isChecked(position.key, personKey);
+            
+            startTransition(async () => {
+                try {
+                    const updatedBallots = optimisticBallots.map(ballot => {
+                        if (ballot.index !== currentBallotIndex) return ballot;
+                        
+                        let newVote;
+                        if (personKey == "invalid" && newChecked) {
+                            newVote = ballot.vote.filter(v => v.position !== position.key)
+                                .concat([{ position: position.key, person: personKey }]);
+                        } else if (newChecked) {
+                            newVote = ballot.vote
+                                .filter(v => v.position !== position.key || v.person !== "invalid")
+                                .concat([{ position: position.key, person: personKey }]);
+                        } else {
+                            newVote = ballot.vote.filter(v => !(v.position === position.key && v.person === personKey));
+                        }
+                        
+                        return { ...ballot, vote: newVote };
+                    });
+                    
+                    setOptimisticBallots(updatedBallots);
+                    setBallotVote(currentBallotIndex, position.key, personKey, newChecked);
+                } catch (error) {
+                    setErrorMessage(`Failed to update vote: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+            });
         }
     }
 
     function setChecked(position: PositionKey, person: PersonKey, checked: boolean) {
-        console.log("Toggle to", position, person, currentVote, checked)
-        setBallotVote(currentBallotIndex, position, person, checked)
+        startTransition(async () => {
+            try {
+                const updatedBallots = optimisticBallots.map(ballot => {
+                    if (ballot.index !== currentBallotIndex) return ballot;
+                    
+                    let newVote;
+                    if (person == "invalid" && checked) {
+                        newVote = ballot.vote.filter(v => v.position !== position)
+                            .concat([{ position, person }]);
+                    } else if (checked) {
+                        newVote = ballot.vote
+                            .filter(v => v.position !== position || v.person !== "invalid")
+                            .concat([{ position, person }]);
+                    } else {
+                        newVote = ballot.vote.filter(v => !(v.position === position && v.person === person));
+                    }
+                    
+                    return { ...ballot, vote: newVote };
+                });
+                
+                setOptimisticBallots(updatedBallots);
+                setBallotVote(currentBallotIndex, position, person, checked);
+            } catch (error) {
+                setErrorMessage(`Failed to update vote: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        });
     }
 
     function handleVoteChange(_event: ChangeEvent<unknown>, pageNumber: number) {
@@ -238,14 +298,22 @@ export function Votes() {
     function remove() {
         if (!currentVote) return;
         
-        removeBallot(currentVote);
-        
-        // After removal, navigate to a valid index
-        // If we removed the last ballot, move to the new last ballot
-        // If we removed a middle ballot, stay at the same index (which now has the next ballot)
-        const newIndex = Math.max(0, Math.min(currentBallotIndex, ballots.length - 2));
-        navigate(`/votes/${newIndex + 1}`);
-        setIsDialogOpen(false)
+        startTransition(async () => {
+            try {
+                const updatedBallots = optimisticBallots
+                    .filter(b => b.index !== currentVote.index)
+                    .map((b, idx) => ({ ...b, index: idx }));
+                
+                setOptimisticBallots(updatedBallots);
+                removeBallot(currentVote);
+                
+                const newIndex = Math.max(0, Math.min(currentBallotIndex, updatedBallots.length - 1));
+                navigate(`/votes/${newIndex + 1}`);
+                setIsDialogOpen(false);
+            } catch (error) {
+                setErrorMessage(`Failed to remove ballot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        });
     }
 
     function openRemoveConfirmationDialog() {
@@ -257,11 +325,22 @@ export function Votes() {
 
     const handleNextVote = () => {
         const nextIndex = currentBallotIndex + 2; 
-        if (nextIndex <= ballots.length) {
+        if (nextIndex <= optimisticBallots.length) {
             navigate(`/votes/${nextIndex}`);
         } else {
-            nextVote(currentBallotIndex);
-            navigate(`/votes/${nextIndex}`);
+            startTransition(async () => {
+                try {
+                    const updatedBallots = [...optimisticBallots, {
+                        index: optimisticBallots.length,
+                        vote: []
+                    }];
+                    setOptimisticBallots(updatedBallots);
+                    nextVote(currentBallotIndex);
+                    navigate(`/votes/${nextIndex}`);
+                } catch (error) {
+                    setErrorMessage(`Failed to create new ballot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+            });
         }
     };
 
@@ -301,6 +380,16 @@ export function Votes() {
     )
 
     return <>
+        <Snackbar
+            open={!!errorMessage}
+            autoHideDuration={6000}
+            onClose={() => setErrorMessage(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+            <Alert severity="error" onClose={() => setErrorMessage(null)}>
+                {errorMessage}
+            </Alert>
+        </Snackbar>
         <Paper sx={{ p: 1 }} className={"vote"}>
             <Dialog
                 open={isDialogOpen}
@@ -338,8 +427,10 @@ export function Votes() {
                 <Grid size="grow">
                     <Grid container>
                         <Grid size={12}>
-                            <Typography variant="h2" sx={{ textAlign: "center" }}>Vote:
-                                # {currentBallotIndex + 1}</Typography>
+                            <Typography variant="h2" sx={{ textAlign: "center", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                Vote: # {currentBallotIndex + 1}
+                                {isPending && <CircularProgress size={24} />}
+                            </Typography>
                         </Grid>
 
                         {positions.map((position, index) =>
@@ -385,7 +476,7 @@ export function Votes() {
                             <Button variant="outlined" tabIndex={3000} sx={{ height: '100%', width: '100%' }}
                                 aria-label="next vote"
                                 onClick={handleNextVote}
-                                disabled={currentBallotIndex == ballots.length - 1}>
+                                disabled={currentBallotIndex == optimisticBallots.length - 1}>
                             
                                 <KeyboardArrowRightIcon />
                             </Button>
@@ -395,7 +486,7 @@ export function Votes() {
 
                 <Grid size={12} sx={{ alignContent: "stretch" }}>
                     <Pagination
-                        count={Math.max(ballots.length, 1)}
+                        count={Math.max(optimisticBallots.length, 1)}
                         color="primary"
                         page={currentBallotIndex + 1}
                         showFirstButton showLastButton
