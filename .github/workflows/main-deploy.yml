@@ -36,7 +36,7 @@ jobs:
         continue-on-error: true
 
       - name: Commit badge to repository
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v10
         with:
           author_name: GitHub Action
           author_email: action@github.com
