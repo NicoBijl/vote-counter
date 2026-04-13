@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Get PR Information
         id: pr_info
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -96,7 +96,7 @@ jobs:
           expires: 7d
 
       - name: Post combined report comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.deploy.outputs.details_url }}
           PR_NUMBER: ${{ steps.pr_info.outputs.number }}
