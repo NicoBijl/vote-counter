@@ -215,7 +215,7 @@ jobs:
     if: ${{ always() && github.event.pull_request && github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Post combined report comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           UNIT_STATUS: ${{ needs.unit.result }}
           E2E_STATUS: ${{ needs.e2e.result }}
