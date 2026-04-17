@@ -21,14 +21,14 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hello-pangea/dnd": "^18.0.1",
-    "@mui/icons-material": "^7.3.7",
+    "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.7",
     "immer": "^11.1.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hotkeys-hook": "^5.2.4",
     "react-router-dom": "^7.13.1",
-    "recharts": "^3.7.0",
+    "recharts": "^3.8.1",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -43,7 +43,7 @@
     "@types/react-dom": "^19.0.3",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "cross-env": "^10.1.0",
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -51,11 +51,11 @@
     "firebase-tools": "^15.6.0",
     "globals": "^17.4.0",
     "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.2.0",
+    "jest-environment-jsdom": "^30.3.0",
     "playwright": "^1.57.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.53.1",
+    "typescript-eslint": "^8.58.2",
     "vite": "^7.1.0"
   }
 }
