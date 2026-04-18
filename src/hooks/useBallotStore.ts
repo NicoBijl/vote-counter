@@ -1,6 +1,7 @@
-import {PersonKey, PositionKey} from "../types.ts";
-import {create} from "zustand";
-import {persist} from "zustand/middleware";
+import { PersonKey, PositionKey } from "../types.ts";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
 interface BallotState {
     ballots: Array<Ballot>
@@ -11,101 +12,81 @@ interface BallotState {
     saveVote: (ballot: Ballot) => void
     setBallotVote: (index: number, position: PositionKey, person: PersonKey, checked: boolean) => void
     importBallots: (newBallots: Array<Ballot>) => void
-    // countVoted: (position: PositionKey, person: PersonKey)=> number
 }
 
 export function createNewBallot(index: number) {
-    console.log('create new ballot', index)
+    console.log('create new ballot', index);
     return {
         index: index,
         vote: []
     } as Ballot;
 }
 
-export const useBallotStore = create<BallotState>()(persist(
-    (set) => {
-        const createDefault = () => {
-            return {
+export const useBallotStore = create<BallotState>()(
+    persist(
+        immer((set) => {
+            // initial state
+            const initialState = {
                 ballots: [createNewBallot(0)]
-            }
-        }
+            };
 
-        return ({
-            ...createDefault(),
-            addBallot: (newBallot) => set((state) => ({ballots: state.ballots.concat([newBallot])})),
-            removeBallot: (ballot) => set((state) => {
-                if (state.ballots.length === 1) {
-                    return state
-                }
-                // remove ballot from array, recalculate indexes.
-                return ({
-                    ballots: state.ballots
-                        .filter(b => b.index !== ballot.index)
-                        .map((b, index) => ({
-                            ...b,
-                            index
-                        }))
-                });
-            }),
-            removeAllBallots: () => set(() => createDefault()),
-            saveVote: (ballotToAdd) => set((state) => {
-                return ({ballots: state.ballots.filter((ballot: Ballot) => ballot.index != ballotToAdd.index).concat([ballotToAdd])});
-            }),
-            setBallotVote: (index, position, person, checked) => set((state) => {
-                // console.log("setBallotVote", index, position, person, checked)
-
-                const updatedBallot = state.ballots.find(b => b.index == index) ?? createNewBallot(index);
-                if (person == "invalid" && checked) {
-                    // remove all votes, add invalid
-                    updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position)
-                        .concat({
-                            position,
-                            person
-                        } as Vote)
-                } else if (checked) {
-                    // add
-                    updatedBallot.vote = updatedBallot.vote
-                        .filter(v => v.position != position || v.person !== "invalid")
-                        .concat({
-                            position,
-                            person
-                        } as Vote)
-                } else {
-                    // remove
-                    updatedBallot.vote = updatedBallot.vote.filter(v => v.position != position || v.person != person)
-                }
-                // replace one vote within the ballot
-
-                // replace one ballot in the list of ballots
-                const updatedBallots = state.ballots.filter((ballot: Ballot) => ballot.index != index).concat([updatedBallot])
-                return ({
-                    ballots: updatedBallots
-                });
-            }),
-            nextVote: (currentIndex) => set((state) => {
-                const newBallotIndex = currentIndex + 1;
-                let updatedBallots;
-                if (!state.ballots.find(b => b.index == newBallotIndex)) {
-                    // create empty ballot if not existing
-                    updatedBallots = state.ballots.concat([createNewBallot(newBallotIndex)])
-                } else {
-                    updatedBallots = state.ballots
-                }
-                console.log("nextVote", newBallotIndex)
-                return ({ballots: updatedBallots});
-            }),
-            importBallots: (newBallots: Array<Ballot>) => {
-                console.log("[DEBUG_LOG] Setting ballots:", newBallots);
-                set({
-                    ballots: newBallots
-                });
-            }
-        });
-    },
-    {
-        name: "vote-store", // by default localStorage is used.
-    }
-))
+            return {
+                ...initialState,
+                addBallot: (newBallot) => set((state) => {
+                    state.ballots.push(newBallot);
+                }),
+                removeBallot: (ballot) => set((state) => {
+                    if (state.ballots.length === 1) return; // no change
+                    // remove ballot
+                    state.ballots = state.ballots.filter(b => b.index !== ballot.index);
+                    // re‑index remaining ballots
+                    state.ballots.forEach((b, idx) => b.index = idx);
+                }),
+                removeAllBallots: () => set((state) => {
+                    state.ballots = [createNewBallot(0)];
+                }),
+                saveVote: (ballotToAdd) => set((state) => {
+                    const idx = state.ballots.findIndex(b => b.index === ballotToAdd.index);
+                    if (idx !== -1) {
+                        state.ballots[idx] = ballotToAdd;
+                    } else {
+                        state.ballots.push(ballotToAdd);
+                    }
+                }),
+                setBallotVote: (index, position, person, checked) => set((state) => {
+                    let ballot = state.ballots.find(b => b.index === index);
+                    if (!ballot) {
+                        ballot = createNewBallot(index);
+                        state.ballots.push(ballot);
+                    }
+                    if (person === "invalid" && checked) {
+                        // remove all votes for this position, add invalid
+                        ballot.vote = ballot.vote.filter(v => v.position !== position);
+                        ballot.vote.push({ position, person });
+                    } else if (checked) {
+                        // add vote (remove any invalid for this position first)
+                        ballot.vote = ballot.vote.filter(v => v.position !== position || v.person !== "invalid");
+                        ballot.vote.push({ position, person });
+                    } else {
+                        // remove vote
+                        ballot.vote = ballot.vote.filter(v => v.position !== position || v.person !== person);
+                    }
+                }),
+                nextVote: (currentIndex) => set((state) => {
+                    const newIndex = currentIndex + 1;
+                    if (!state.ballots.find(b => b.index === newIndex)) {
+                        state.ballots.push(createNewBallot(newIndex));
+                    }
+                    console.log("nextVote", newIndex);
+                }),
+                importBallots: (newBallots) => set((state) => {
+                    state.ballots = newBallots;
+                })
+            };
+        }),
+        { name: "vote-store" }
+    )
+);
 
 export interface Ballot {
     index: number
