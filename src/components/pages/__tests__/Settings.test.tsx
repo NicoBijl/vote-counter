@@ -136,7 +136,7 @@ describe('Settings', () => {
         fireEvent.change(fileInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(screen.getByText('Invalid ballot format. Please check the file structure.')).toBeInTheDocument();
+            expect(screen.getByText('Invalid ballot format')).toBeInTheDocument();
         });
     });
 
