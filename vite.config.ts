@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,5 +17,12 @@ export default defineConfig({
         /.*\/__tests__\/.*/,
       ]
     }
+  },
+  // Add Vitest configuration
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './jest.setup.ts',   // We'll rename this later
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   }
-})
+});
